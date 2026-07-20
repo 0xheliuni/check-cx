@@ -50,3 +50,7 @@ error.log
 .playwright-mcp
 .mcp.json
 
+
+# local agent workspaces
+.worktrees/
+.superpowers/
