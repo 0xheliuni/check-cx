@@ -13,11 +13,11 @@ const CornerPlus = ({ className }: { className?: string }) => (
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="1"
+    strokeWidth="2"
     className={cn("absolute h-4 w-4 text-muted-foreground/40", className)}
   >
-    <line x1="12" y1="0" x2="12" y2="24" />
-    <line x1="0" y1="12" x2="24" y2="12" />
+    <rect x="2" y="2" width="20" height="20" />
+    <rect x="8" y="8" width="8" height="8" fill="currentColor" stroke="none" />
   </svg>
 );
 
@@ -41,7 +41,11 @@ function CardSkeleton() {
 
 function ProviderCardSkeleton() {
   return (
-    <div className="relative flex flex-col overflow-hidden rounded-2xl border border-border/40 bg-background/40">
+    <div className="nier-shadow relative flex flex-col overflow-hidden border border-foreground/30 bg-card/80">
+      <div className="flex items-center justify-between gap-3 bg-foreground/80 px-4 py-2.5 sm:px-5">
+        <SkeletonBlock className="h-4 w-32 bg-background/30" />
+        <SkeletonBlock className="h-3 w-14 bg-background/30" />
+      </div>
       <div className="p-4 sm:p-5">
         <div className="mb-4 flex items-start justify-between">
           <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -85,7 +89,7 @@ function ProviderCardSkeleton() {
 
 function GroupPanelSkeleton({ cardCount = 3 }: { cardCount?: number }) {
   return (
-    <section className="rounded-3xl border bg-white/30 p-4 backdrop-blur-sm dark:bg-black/10 sm:p-6">
+    <section className="nier-shadow border border-foreground/40 bg-card/80 p-4 sm:p-6">
       <div className="flex items-center justify-between gap-3 sm:gap-4">
         <div className="flex flex-1 min-w-0 items-center gap-3 sm:gap-4">
           <SkeletonBlock className="h-8 w-8 rounded-xl sm:h-10 sm:w-10" />
@@ -117,10 +121,10 @@ function GroupPanelSkeleton({ cardCount = 3 }: { cardCount?: number }) {
 export function DashboardSkeleton() {
   return (
     <div className="relative animate-pulse">
-      <CornerPlus className="fixed left-4 top-4 h-6 w-6 text-border md:left-8 md:top-8" />
-      <CornerPlus className="fixed right-4 top-4 h-6 w-6 text-border md:right-8 md:top-8" />
-      <CornerPlus className="fixed bottom-4 left-4 h-6 w-6 text-border md:bottom-8 md:left-8" />
-      <CornerPlus className="fixed bottom-4 right-4 h-6 w-6 text-border md:bottom-8 md:right-8" />
+      <CornerPlus className="fixed left-4 top-4 hidden h-6 w-6 text-border md:left-8 md:top-8 md:block" />
+      <CornerPlus className="fixed right-4 top-4 hidden h-6 w-6 text-border md:right-8 md:top-8 md:block" />
+      <CornerPlus className="fixed bottom-4 left-4 hidden h-6 w-6 text-border md:bottom-8 md:left-8 md:block" />
+      <CornerPlus className="fixed bottom-4 right-4 hidden h-6 w-6 text-border md:bottom-8 md:right-8 md:block" />
 
       <header className="relative z-10 mb-8 flex flex-col justify-between gap-6 sm:mb-12 sm:gap-8 lg:flex-row lg:items-end">
         <div className="space-y-4">

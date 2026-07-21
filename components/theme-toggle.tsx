@@ -15,7 +15,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button variant="outline" size="icon" className="h-9 w-9 rounded-full border-border/40 bg-background/60 backdrop-blur-sm">
+      <Button variant="outline" size="icon" className="h-6 w-6 border-foreground/40 bg-background/60 sm:h-7 sm:w-7">
         <span className="sr-only">Toggle theme</span>
       </Button>
     )
@@ -30,12 +30,12 @@ export function ThemeToggle() {
         else if (theme === 'dark') setTheme('system')
         else setTheme('light')
       }}
-      className="h-9 w-9 rounded-full border-border/40 bg-background/60 backdrop-blur-sm hover:bg-background/80 transition-all"
+      className="nier-invert-hover h-6 w-6 border-foreground/40 bg-background/60 sm:h-7 sm:w-7"
     >
-      <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <Sun className="h-3.5 w-3.5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute h-3.5 w-3.5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
       {theme === 'system' && (
-        <Laptop className="absolute h-[0.8rem] w-[0.8rem] translate-y-2 translate-x-2 opacity-50" />
+        <Laptop className="absolute h-2 w-2 translate-y-1.5 translate-x-1.5 opacity-50" />
       )}
       <span className="sr-only">Toggle theme</span>
     </Button>

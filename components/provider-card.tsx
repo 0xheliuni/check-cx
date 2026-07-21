@@ -5,7 +5,6 @@ import {AlertTriangle, Radio, Zap} from "lucide-react";
 import {ProviderIcon} from "@/components/provider-icon";
 import {StatusTimeline} from "@/components/status-timeline";
 import {AvailabilityStats} from "@/components/availability-stats";
-import {Badge} from "@/components/ui/badge";
 import type {AvailabilityPeriod, AvailabilityStat, ProviderTimeline} from "@/lib/types";
 import {OFFICIAL_STATUS_META, PROVIDER_LABEL, STATUS_META} from "@/lib/core/status";
 import {cn} from "@/lib/utils";
@@ -20,17 +19,17 @@ interface ProviderCardProps {
 const formatLatency = (value: number | null | undefined) =>
   typeof value === "number" ? `${value} ms` : "—";
 
-/** Tech-style decorative corner plus marker */
+/** NieR 风格角落装饰：外框方块 + 内部实心方块 */
 const CornerPlus = ({ className }: { className?: string }) => (
   <svg
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="1"
+    strokeWidth="2"
     className={cn("absolute h-4 w-4 text-muted-foreground/40", className)}
   >
-    <line x1="12" y1="0" x2="12" y2="24" />
-    <line x1="0" y1="12" x2="24" y2="12" />
+    <rect x="2" y="2" width="20" height="20" />
+    <rect x="8" y="8" width="8" height="8" fill="currentColor" stroke="none" />
   </svg>
 );
 
@@ -51,10 +50,10 @@ export function ProviderCard({
 
   return (
     <div className={cn(
-      "group relative flex flex-col overflow-hidden rounded-2xl border bg-background/40 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5",
+      "nier-shadow group relative flex flex-col overflow-hidden border bg-card/80 transition-transform duration-200 hover:-translate-x-0.5 hover:-translate-y-0.5",
       banner
         ? banner.bannerBorder
-        : "border-border/40 hover:border-primary/20"
+        : "border-foreground/30 hover:border-foreground/60"
     )}>
       <CornerPlus className="left-2 top-2 opacity-0 transition-opacity group-hover:opacity-100" />
       <CornerPlus className="right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100" />
@@ -88,35 +87,36 @@ export function ProviderCard({
         </div>
       )}
 
+      {/* NieR 存档栏式深色标题条 */}
+      <div className="flex items-center justify-between gap-3 bg-foreground px-4 py-2.5 text-background sm:px-5">
+        <h3 className="nier-marker min-w-0 truncate text-sm font-bold uppercase tracking-widest sm:text-base">
+          {latest.name}
+        </h3>
+        <span className="flex shrink-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest sm:text-xs">
+          <span className={cn("h-2 w-2", preset.dot)} />
+          {preset.label}
+        </span>
+      </div>
+
       <div className={cn("flex-1 p-4 sm:p-5", banner && "opacity-60")}>
         <div className="mb-4">
-          <h3 className="line-clamp-2 text-base font-bold leading-tight tracking-tight text-foreground sm:text-lg md:text-xl lg:text-2xl">
-            {latest.name}
-          </h3>
-
-          <div className="mt-2.5 flex items-center gap-3">
-            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-white/80 to-white/20 shadow-sm ring-1 ring-black/5 transition-transform group-hover:scale-105 dark:from-white/10 dark:to-white/5 dark:ring-white/10 sm:h-12 sm:w-12 sm:rounded-2xl">
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center border border-foreground/30 bg-background/60 sm:h-12 sm:w-12">
               <div className="scale-75 sm:scale-100">
                 <ProviderIcon type={latest.type} size={26} className="text-foreground/80" />
               </div>
             </div>
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-muted px-2 py-0.5 font-semibold text-foreground/70">
+              <span className="inline-flex shrink-0 items-center gap-1 bg-muted px-2 py-0.5 font-semibold text-foreground/70">
                 {PROVIDER_LABEL[latest.type]}
               </span>
               <span className="truncate font-mono font-medium text-foreground/50">{latest.model}</span>
             </div>
-            <Badge
-              variant={preset.badge}
-              className="shrink-0 whitespace-nowrap rounded-lg px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider shadow-sm backdrop-blur-md sm:px-2.5 sm:py-1 sm:text-xs"
-            >
-              {preset.label}
-            </Badge>
           </div>
         </div>
 
         <div className="mb-4 grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-muted/30 p-3 transition-colors group-hover:bg-muted/50">
+          <div className="border border-foreground/20 bg-muted/30 p-3 transition-colors group-hover:bg-muted/50">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Zap className="h-3.5 w-3.5" />
               <span className="text-[10px] font-semibold uppercase tracking-wider">对话延迟</span>
@@ -126,7 +126,7 @@ export function ProviderCard({
             </div>
           </div>
 
-          <div className="rounded-xl bg-muted/30 p-3 transition-colors group-hover:bg-muted/50">
+          <div className="border border-foreground/20 bg-muted/30 p-3 transition-colors group-hover:bg-muted/50">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Radio className="h-3.5 w-3.5" />
               <span className="text-[10px] font-semibold uppercase tracking-wider">端点 PING</span>

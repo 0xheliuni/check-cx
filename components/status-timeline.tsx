@@ -64,7 +64,7 @@ export function StatusTimeline({ items, nextRefreshInMs, isMaintenance }: Status
   if (items.length === 0) {
     if (isMaintenance) {
       return (
-        <div className="flex items-center justify-center rounded-lg border border-dashed border-blue-500/30 bg-blue-500/5 p-4 text-xs text-blue-500">
+        <div className="flex items-center justify-center border border-dashed border-(--status-info)/40 bg-(--status-info)/5 p-4 text-xs text-(--status-info)">
           维护中 · 已暂停时间线采集
         </div>
       );
@@ -153,7 +153,7 @@ export function StatusTimeline({ items, nextRefreshInMs, isMaintenance }: Status
                 </HoverCardTrigger>
                 <HoverCardContent
                   side="top"
-                  className="w-64 space-y-3 rounded-xl border-border/50 bg-background/95 p-4 shadow-xl backdrop-blur-xl"
+                  className="nier-shadow w-64 space-y-3 border-foreground/40 bg-popover p-4"
                 >
                    <div className="flex items-center justify-between border-b border-border/50 pb-2">
                       <Badge variant={preset.badge} className="h-5 px-1.5 text-[10px]">{preset.label}</Badge>

@@ -11,14 +11,14 @@ export default function Home() {
         <DashboardBootstrap />
       </main>
       
-      <footer className="mt-16 border-t border-border/40">
+      <footer className="mt-16 border-t border-foreground/30">
         <div className="mx-auto flex w-full max-w-[1600px] flex-col items-center justify-between gap-4 px-3 py-6 sm:flex-row sm:px-6 lg:px-12">
-          <div className="text-sm text-muted-foreground">
-            © <ClientYear placeholder="2026" /> Check CX. All rights reserved.
+          <div className="text-sm uppercase tracking-widest text-muted-foreground">
+            © <ClientYear placeholder="2026" /> Check CX — Glory to Mankind.
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/40 bg-background/60 px-3 py-1 text-xs text-muted-foreground shadow-sm transition hover:border-border/80 hover:text-foreground">
+            <div className="nier-shadow inline-flex items-center gap-2 border border-foreground/40 bg-background/60 px-3 py-1 text-xs uppercase tracking-widest text-muted-foreground transition hover:text-foreground">
               <span className="font-medium opacity-70">Ver.</span>
               <span className="font-mono">{ESTIMATED_VERSION}</span>
             </div>

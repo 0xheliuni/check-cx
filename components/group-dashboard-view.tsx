@@ -42,17 +42,17 @@ const PERIOD_OPTIONS: Array<{ value: AvailabilityPeriod; label: string }> = [
   { value: "30d", label: "30 天" },
 ];
 
-/** Tech-style decorative corner plus marker */
+/** NieR 风格角落装饰：外框方块 + 内部实心方块 */
 const CornerPlus = ({ className }: { className?: string }) => (
-  <svg 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="1" 
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
     className={cn("absolute h-4 w-4 text-muted-foreground/40", className)}
   >
-    <line x1="12" y1="0" x2="12" y2="24" />
-    <line x1="0" y1="12" x2="24" y2="12" />
+    <rect x="2" y="2" width="20" height="20" />
+    <rect x="8" y="8" width="8" height="8" fill="currentColor" stroke="none" />
   </svg>
 );
 
@@ -195,73 +195,76 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
 
   return (
     <div className="relative">
-      <CornerPlus className="fixed left-4 top-4 h-6 w-6 text-border md:left-8 md:top-8" />
-      <CornerPlus className="fixed right-4 top-4 h-6 w-6 text-border md:right-8 md:top-8" />
-      <CornerPlus className="fixed bottom-4 left-4 h-6 w-6 text-border md:bottom-8 md:left-8" />
-      <CornerPlus className="fixed bottom-4 right-4 h-6 w-6 text-border md:bottom-8 md:right-8" />
+      <CornerPlus className="fixed left-4 top-4 hidden h-6 w-6 text-border md:left-8 md:top-8 md:block" />
+      <CornerPlus className="fixed right-4 top-4 hidden h-6 w-6 text-border md:right-8 md:top-8 md:block" />
+      <CornerPlus className="fixed bottom-4 left-4 hidden h-6 w-6 text-border md:bottom-8 md:left-8 md:block" />
+      <CornerPlus className="fixed bottom-4 right-4 hidden h-6 w-6 text-border md:bottom-8 md:right-8 md:block" />
 
       <header className="relative z-10 mb-8 flex flex-col justify-between gap-6 sm:mb-12 sm:gap-8 lg:flex-row lg:items-end">
         <div className="space-y-4">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-foreground text-background sm:h-8 sm:w-8">
+            <div className="nier-shadow flex h-7 w-7 items-center justify-center bg-foreground text-background sm:h-8 sm:w-8">
               <Activity className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </div>
-            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground sm:text-sm">
+            <span className="text-xs font-bold uppercase tracking-[0.35em] text-muted-foreground sm:text-sm">
               Group View
             </span>
           </div>
-          
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="max-w-2xl text-3xl font-extrabold leading-tight tracking-tight sm:text-5xl md:text-6xl">
-              {displayName}
-            </h1>
-            <GroupTags tags={data.tags} />
-            {data.websiteUrl && (
-              <a
-                href={data.websiteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center rounded-full bg-muted/50 p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <ExternalLink className="h-6 w-6" />
-              </a>
-            )}
+
+          <div className="max-w-2xl space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="nier-text-shadow min-w-0 break-words text-2xl font-extrabold uppercase leading-tight tracking-[0.1em] sm:text-4xl sm:tracking-[0.15em] md:text-5xl">
+                {displayName}
+              </h1>
+              <GroupTags tags={data.tags} />
+              {data.websiteUrl && (
+                <a
+                  href={data.websiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="nier-invert-hover flex items-center justify-center border border-foreground/30 bg-muted/50 p-2 text-muted-foreground"
+                >
+                  <ExternalLink className="h-6 w-6" />
+                </a>
+              )}
+            </div>
+            <div className="nier-rule w-full" />
           </div>
           
            <div className="flex flex-wrap items-center gap-2.5">
             {statusSummary.operational > 0 && (
-               <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-400">
-                 <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+               <span className="inline-flex items-center gap-1.5 border border-(--status-ok)/40 bg-(--status-ok)/10 px-2.5 py-0.5 text-xs font-medium text-(--status-ok)">
+                 <span className="h-1.5 w-1.5 bg-(--status-ok)" />
                 {statusSummary.operational} 正常
               </span>
             )}
             {statusSummary.degraded > 0 && (
-               <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+               <span className="inline-flex items-center gap-1.5 border border-(--status-warn)/40 bg-(--status-warn)/10 px-2.5 py-0.5 text-xs font-medium text-(--status-warn)">
+                <span className="h-1.5 w-1.5 bg-(--status-warn)" />
                 {statusSummary.degraded} 延迟
               </span>
             )}
             {statusSummary.failed > 0 && (
-               <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:text-red-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+               <span className="inline-flex items-center gap-1.5 border border-(--status-bad)/40 bg-(--status-bad)/10 px-2.5 py-0.5 text-xs font-medium text-(--status-bad)">
+                <span className="h-1.5 w-1.5 bg-(--status-bad)" />
                 {statusSummary.failed} 异常
               </span>
             )}
             {statusSummary.validation_failed > 0 && (
-               <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/10 px-2.5 py-0.5 text-xs font-medium text-orange-700 dark:text-orange-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+               <span className="inline-flex items-center gap-1.5 border border-(--status-warn)/40 bg-(--status-warn)/10 px-2.5 py-0.5 text-xs font-medium text-(--status-warn)">
+                <span className="h-1.5 w-1.5 bg-(--status-warn)" />
                 {statusSummary.validation_failed} 验证失败
               </span>
             )}
             {statusSummary.error > 0 && (
-               <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600/10 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:text-red-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
+               <span className="inline-flex items-center gap-1.5 border border-(--status-bad)/40 bg-(--status-bad)/10 px-2.5 py-0.5 text-xs font-medium text-(--status-bad)">
+                <span className="h-1.5 w-1.5 bg-(--status-bad)" />
                 {statusSummary.error} 错误
               </span>
             )}
              {statusSummary.maintenance > 0 && (
-               <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
-                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+               <span className="inline-flex items-center gap-1.5 border border-(--status-info)/40 bg-(--status-info)/10 px-2.5 py-0.5 text-xs font-medium text-(--status-info)">
+                <span className="h-1.5 w-1.5 bg-(--status-info)" />
                 {statusSummary.maintenance} 维护
               </span>
             )}
@@ -282,7 +285,7 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
                    className={cn(
                      "rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors",
                      selectedPeriod === option.value
-                       ? "bg-foreground text-background"
+                       ? "nier-arrows bg-foreground px-3 text-background"
                        : "text-muted-foreground hover:text-foreground"
                    )}
                  >
@@ -293,16 +296,16 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
            </div>
 
            {/* Status Pill */}
-           <div className="flex items-center gap-2 rounded-full border border-border/60 bg-background/50 px-4 py-1.5 backdrop-blur-sm">
+           <div className="nier-shadow flex items-center gap-2 border border-foreground/40 bg-background/60 px-4 py-1.5">
               <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+                <span className="absolute inline-flex h-full w-full animate-ping bg-(--status-ok) opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 bg-(--status-ok)" />
               </span>
-              <span className="text-xs font-semibold uppercase tracking-wider">Operational</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.25em]">Operational</span>
            </div>
 
            {lastUpdated && (
-             <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
+             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs font-medium text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <RefreshCcw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />
                   <span>更新于 <ClientTime value={lastUpdated} /></span>
@@ -314,7 +317,7 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
                   onClick={() => refresh(selectedPeriod, true)}
                   disabled={isRefreshing}
                   className={cn(
-                    "rounded-full border border-border/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:border-border/80 hover:text-foreground",
+                    "nier-invert-hover border border-foreground/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground",
                     isRefreshing && "cursor-not-allowed opacity-60"
                   )}
                 >

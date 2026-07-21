@@ -38,7 +38,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
         {/* 返回首页链接 */}
         <Link
           href="/"
-          className="inline-flex w-fit items-center gap-1.5 rounded-full border border-border/40 bg-background/60 px-4 py-1.5 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur-sm transition hover:border-border/80 hover:text-foreground"
+          className="nier-invert-hover nier-shadow inline-flex w-fit items-center gap-1.5 border border-foreground/40 bg-background/60 px-4 py-1.5 text-sm font-medium uppercase tracking-widest text-muted-foreground"
         >
           <ChevronLeft className="h-4 w-4" />
           返回首页

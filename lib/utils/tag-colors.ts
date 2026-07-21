@@ -9,15 +9,16 @@ export const parseTagList = (tags?: string | null): string[] => {
     .filter(Boolean);
 };
 
+// NieR 哑色系：苔绿 / 哑金 / 锈红 / 灰蓝 / 橄榄 / 赭石 / 灰紫 / 暖灰
 const TAG_COLOR_CLASSES = [
-  "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400",
-  "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-400",
-  "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-400",
-  "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400",
-  "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400", // "商业"
-  "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-400",
-  "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400", // "公益"
-  "bg-lime-100 text-lime-700 dark:bg-lime-500/15 dark:text-lime-400",
+  "bg-[#75824f]/20 text-[#4c5533] dark:bg-[#75824f]/25 dark:text-[#aab581]",
+  "bg-[#a8863d]/20 text-[#6b5526] dark:bg-[#a8863d]/25 dark:text-[#c9a86a]",
+  "bg-[#b05c4b]/20 text-[#733a2e] dark:bg-[#b05c4b]/25 dark:text-[#cd8a77]",
+  "bg-[#5e7c8b]/20 text-[#3c505a] dark:bg-[#5e7c8b]/25 dark:text-[#8fa9b5]",
+  "bg-[#6e6a45]/20 text-[#47442c] dark:bg-[#6e6a45]/25 dark:text-[#a09b6e]", // "商业"
+  "bg-[#96683f]/20 text-[#5f4228] dark:bg-[#96683f]/25 dark:text-[#bd9268]",
+  "bg-[#7a6d80]/20 text-[#4e4552] dark:bg-[#7a6d80]/25 dark:text-[#a99bb0]", // "公益"
+  "bg-[#7d7866]/20 text-[#4f4c40] dark:bg-[#7d7866]/25 dark:text-[#a8a390]",
 ];
 
 const hashTag = (value: string) => {

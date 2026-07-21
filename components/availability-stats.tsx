@@ -20,9 +20,9 @@ function getAvailabilityColorStyle(pct: number | null | undefined) {
     return undefined;
   }
   const clamped = Math.max(0, Math.min(100, pct));
-  // 0 -> red, 100 -> green
-  const hue = (clamped / 100) * 120;
-  return { color: `hsl(${hue} 80% 45%)` };
+  // 0 -> 锈红, 100 -> 苔绿；低饱和贴合 NieR 色调
+  const hue = (clamped / 100) * 110;
+  return { color: `hsl(${hue} 38% 38%)` };
 }
 
 export function AvailabilityStats({ stats, period, isMaintenance }: AvailabilityStatsProps) {
@@ -33,18 +33,18 @@ export function AvailabilityStats({ stats, period, isMaintenance }: Availability
   // 维护模式下的特殊展示
   if (isMaintenance) {
     return (
-      <div className="flex items-center justify-between rounded-lg border border-dashed border-blue-500/30 bg-blue-500/5 px-3 py-2">
+      <div className="flex items-center justify-between border border-dashed border-(--status-info)/40 bg-(--status-info)/5 px-3 py-2">
         <div className="space-y-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-500">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-(--status-info)">
             可用性 ({PERIOD_LABELS[period]})
           </p>
-          <p className="text-[10px] text-blue-500/70">
+          <p className="text-[10px] text-(--status-info)/70">
             {current
               ? `维护前 ${current.operationalCount}/${current.totalChecks} 成功`
               : "维护中 · 已暂停统计"}
           </p>
         </div>
-        <span className="font-mono text-sm font-bold text-blue-500">
+        <span className="font-mono text-sm font-bold text-(--status-info)">
           {pctLabel}
         </span>
       </div>
