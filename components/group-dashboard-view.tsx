@@ -258,7 +258,7 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
             <h3 className="text-lg font-semibold">该分组下暂无配置</h3>
           </div>
       ) : (
-        <section className={`grid gap-6 ${gridColsClass}`}>
+        <section className={`grid gap-4 ${gridColsClass}`}>
           {providerTimelines.map((timeline) => (
             <ProviderCard
               key={timeline.id}

@@ -46,6 +46,7 @@ import type {
   GroupInfoSummary,
 } from "@/lib/types";
 import { UNGROUPED_DISPLAY_NAME } from "@/lib/types";
+import {STATUS_META} from "@/lib/core/status";
 import {cn} from "@/lib/utils";
 import {parseTagList, getTagColorClass} from "@/lib/utils/tag-colors";
 
@@ -712,8 +713,8 @@ export function DashboardView({ initialData }: DashboardViewProps) {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 rounded-full border px-3 py-1">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                <span className={cn("absolute inline-flex h-full w-full animate-ping rounded-full opacity-75", STATUS_META.operational.dot)} />
+                <span className={cn("relative inline-flex h-2 w-2 rounded-full", STATUS_META.operational.dot)} />
               </span>
               <span className="text-xs font-medium">Operational</span>
             </div>
@@ -865,7 +866,7 @@ export function DashboardView({ initialData }: DashboardViewProps) {
             groupedPanels
           )
         ) : (
-          <div className={`grid gap-6 ${gridColsClass}`}>
+          <div className={`grid gap-4 ${gridColsClass}`}>
             {providerTimelines.map((timeline) => (
               <ProviderCard
                 key={timeline.id}
