@@ -148,17 +148,17 @@ const buildGroupedTimelines = (
   return groups;
 };
 
-/** NieR 风格角落装饰：外框方块 + 内部实心方块 */
+/** Tech-style decorative corner plus marker */
 const CornerPlus = ({ className }: { className?: string }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
+  <svg 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="1" 
     className={cn("absolute h-4 w-4 text-muted-foreground/40", className)}
   >
-    <rect x="2" y="2" width="20" height="20" />
-    <rect x="8" y="8" width="8" height="8" fill="currentColor" stroke="none" />
+    <line x1="12" y1="0" x2="12" y2="24" />
+    <line x1="0" y1="12" x2="24" y2="12" />
   </svg>
 );
 
@@ -226,7 +226,7 @@ function GroupPanel({
     <Collapsible
       open={isOpen}
       onOpenChange={setIsOpen}
-      className="nier-shadow border border-foreground/40 bg-card/80 p-4 sm:p-6"
+      className="rounded-3xl border bg-white/30 p-4 backdrop-blur-sm dark:bg-black/10 sm:p-6"
     >
       <div className="flex items-center justify-between gap-3 sm:gap-4">
         {dragHandleProps && (
@@ -238,13 +238,13 @@ function GroupPanel({
             <GripVertical className="h-5 w-5" />
           </div>
         )}
-        <CollapsibleTrigger className="group flex flex-1 min-w-0 items-center gap-3 text-left transition-transform duration-150 hover:translate-x-1 focus-visible:outline-none sm:gap-4">
-          <div className="nier-invert-hover flex h-8 w-8 shrink-0 items-center justify-center border border-foreground/40 bg-background sm:h-10 sm:w-10">
-            <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180 sm:h-5 sm:w-5" />
+        <CollapsibleTrigger className="group flex flex-1 min-w-0 items-center gap-3 text-left transition hover:opacity-80 focus-visible:outline-none sm:gap-4">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-black/5 transition-colors group-hover:bg-white/80 dark:bg-white/10 dark:ring-white/10 sm:h-10 sm:w-10">
+            <ChevronDown className="h-4 w-4 text-foreground transition-transform duration-200 group-data-[state=open]:rotate-180 sm:h-5 sm:w-5" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <h2 className="nier-marker truncate text-lg font-bold uppercase tracking-widest text-foreground sm:text-2xl">
+              <h2 className="truncate text-lg font-bold tracking-tight text-foreground sm:text-2xl">
                 {group.displayName}
               </h2>
               <GroupTags tags={group.tags} />
@@ -253,41 +253,41 @@ function GroupPanel({
                   href={group.websiteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="nier-invert-hover flex items-center justify-center border border-foreground/30 bg-muted/50 px-1 py-0.5 text-muted-foreground"
+                  className="flex items-center justify-center rounded-full bg-muted/50 p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <ExternalLink className="h-3.5 w-3.5" />
+                  <ExternalLink className="h-4 w-4" />
                 </a>
               )}
             </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                {statusSummary.operational > 0 && (
                  <span className="flex items-center gap-1.5 whitespace-nowrap">
-                   <span className="h-1.5 w-1.5 bg-(--status-ok)" />
+                   <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
                    {statusSummary.operational} 正常
                  </span>
                )}
                {statusSummary.degraded > 0 && (
                  <span className="flex items-center gap-1.5 whitespace-nowrap">
-                    <span className="h-1.5 w-1.5 bg-(--status-warn)" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                     {statusSummary.degraded} 延迟
                  </span>
                )}
                {statusSummary.failed > 0 && (
                  <span className="flex items-center gap-1.5 whitespace-nowrap">
-                    <span className="h-1.5 w-1.5 bg-(--status-bad)" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
                     {statusSummary.failed} 异常
                  </span>
                )}
                {statusSummary.validation_failed > 0 && (
                  <span className="flex items-center gap-1.5 whitespace-nowrap">
-                    <span className="h-1.5 w-1.5 bg-(--status-warn)" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
                     {statusSummary.validation_failed} 验证失败
                  </span>
                )}
                {statusSummary.error > 0 && (
                  <span className="flex items-center gap-1.5 whitespace-nowrap">
-                    <span className="h-1.5 w-1.5 bg-(--status-bad)" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
                     {statusSummary.error} 错误
                  </span>
                )}
@@ -297,7 +297,7 @@ function GroupPanel({
         
         <Link
             href={groupLink}
-            className="nier-shadow group flex h-8 w-8 shrink-0 items-center justify-center bg-foreground p-0 text-sm font-medium uppercase tracking-widest text-background transition-all hover:bg-foreground/80 sm:h-10 sm:w-auto sm:gap-2 sm:px-5"
+            className="group flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground p-0 text-sm font-medium text-background transition-all hover:bg-foreground/90 sm:h-10 sm:w-auto sm:gap-2 sm:px-5 sm:hover:px-6"
         >
             <span className="hidden whitespace-nowrap sm:inline">详情</span>
             <ExternalLink className="h-3.5 w-3.5 opacity-70" />
@@ -739,19 +739,19 @@ export function DashboardView({ initialData }: DashboardViewProps) {
 
   return (
     <div className="relative">
-       {/* Corner decorative markers for the main container（窄屏隐藏，避免压住内容） */}
-       <CornerPlus className="fixed left-4 top-4 hidden h-6 w-6 text-border md:left-8 md:top-8 md:block" />
-       <CornerPlus className="fixed right-4 top-4 hidden h-6 w-6 text-border md:right-8 md:top-8 md:block" />
-       <CornerPlus className="fixed bottom-4 left-4 hidden h-6 w-6 text-border md:bottom-8 md:left-8 md:block" />
-       <CornerPlus className="fixed bottom-4 right-4 hidden h-6 w-6 text-border md:bottom-8 md:right-8 md:block" />
+       {/* Corner decorative markers for the main container */}
+       <CornerPlus className="fixed left-4 top-4 h-6 w-6 text-border md:left-8 md:top-8" />
+       <CornerPlus className="fixed right-4 top-4 h-6 w-6 text-border md:right-8 md:top-8" />
+       <CornerPlus className="fixed bottom-4 left-4 h-6 w-6 text-border md:bottom-8 md:left-8" />
+       <CornerPlus className="fixed bottom-4 right-4 h-6 w-6 text-border md:bottom-8 md:right-8" />
 
-      <header className="relative z-10 mb-6 flex flex-col justify-between gap-4 sm:mb-8 sm:gap-6 lg:flex-row lg:items-end">
-        <div className="space-y-2.5">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <div className="nier-shadow flex h-7 w-7 items-center justify-center bg-foreground text-background sm:h-8 sm:w-8">
+      <header className="relative z-10 mb-8 flex flex-col justify-between gap-6 sm:mb-12 sm:gap-8 lg:flex-row lg:items-end">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-foreground text-background sm:h-8 sm:w-8">
               <Activity className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </div>
-            <span className="text-xs font-bold uppercase tracking-[0.35em] text-muted-foreground sm:text-sm">
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground sm:text-sm">
               System Status
             </span>
             <div className="h-3 w-[1px] bg-border/60 sm:h-4" />
@@ -767,19 +767,21 @@ export function DashboardView({ initialData }: DashboardViewProps) {
             <ThemeToggle />
           </div>
           
-          <div className="max-w-2xl space-y-2">
-            <h1 className="nier-text-shadow break-words text-xl font-extrabold uppercase leading-tight tracking-[0.1em] sm:text-2xl sm:tracking-[0.15em] md:text-3xl">
-              AI SERVICES{" "}
-              <span className="text-muted-foreground">/ INTELLIGENCE MONITOR</span>
-            </h1>
-            <div className="nier-rule w-full" />
-            <p className="text-xs text-muted-foreground sm:text-sm">
-              实时追踪各大 AI 模型对话接口的可用性、延迟与官方服务状态。
-            </p>
+          <h1 className="max-w-2xl text-3xl font-extrabold leading-tight tracking-tight sm:text-5xl md:text-6xl">
+            AI SERVICES <br />
+            <span className="text-muted-foreground">INTELLIGENCE MONITOR</span>
+          </h1>
+          
+          <div className="flex max-w-lg flex-col gap-2 text-sm text-muted-foreground sm:text-base">
+             <p className="leading-relaxed">
+               实时追踪各大 AI 模型对话接口的可用性、延迟与官方服务状态。
+               <br />
+               Advanced performance metrics for next-gen intelligence.
+             </p>
           </div>
         </div>
 
-        <div className="flex flex-col items-start gap-2 lg:items-end">
+        <div className="flex flex-col items-start gap-3 sm:gap-4 lg:items-end">
            {/* Search Box - only show when multiple groups exist */}
            {hasMultipleGroups && (
              <div className="relative w-full sm:w-64">
@@ -788,7 +790,7 @@ export function DashboardView({ initialData }: DashboardViewProps) {
                  placeholder="搜索分组..."
                  value={searchQuery}
                  onChange={(e) => setSearchQuery(e.target.value)}
-                 className="h-9 w-full border border-foreground/40 bg-background/60 pl-10 pr-10 text-sm transition-colors placeholder:text-muted-foreground/60 focus:border-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                 className="h-10 w-full rounded-full border border-border/60 bg-background/50 pl-10 pr-10 text-sm backdrop-blur-sm transition-colors placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
                />
                <Search
                  aria-hidden="true"
@@ -817,7 +819,7 @@ export function DashboardView({ initialData }: DashboardViewProps) {
                      type="button"
                      onClick={() => toggleTag(tag)}
                      className={cn(
-                       "px-2.5 py-0.5 text-xs font-semibold transition-all",
+                       "rounded-full px-3 py-1 text-xs font-semibold transition-all",
                        isSelected
                          ? cn(getTagColorClass(tag), "ring-2 ring-foreground/20")
                          : "bg-muted/50 text-muted-foreground hover:bg-muted"
@@ -840,43 +842,20 @@ export function DashboardView({ initialData }: DashboardViewProps) {
              </div>
            )}
 
-           {/* 排序 + 可用性区间：同一行 */}
-           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-             {hasMultipleGroups && (
-               <div className="flex items-center gap-1.5 border border-border/70 bg-background/50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                 <span className="pl-1">排序</span>
-                 <div className="flex items-center gap-0.5">
-                   {SORT_OPTIONS.map((option) => (
-                     <button
-                       key={option.value}
-                       type="button"
-                       onClick={() => setSortMode(option.value)}
-                       className={cn(
-                         "px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors",
-                         sortMode === option.value
-                           ? "nier-arrows bg-foreground px-3 text-background"
-                           : "text-muted-foreground hover:text-foreground"
-                       )}
-                     >
-                       {option.label}
-                     </button>
-                   ))}
-                 </div>
-               </div>
-             )}
-
-             <div className="flex items-center gap-1.5 border border-border/70 bg-background/50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-               <span className="pl-1">区间</span>
-               <div className="flex items-center gap-0.5">
-                 {PERIOD_OPTIONS.map((option) => (
+           {/* Sort Mode Selector */}
+           {hasMultipleGroups && (
+             <div className="flex items-center gap-2 rounded-full border border-border/60 bg-background/50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+               <span className="pl-1">排序</span>
+               <div className="flex items-center gap-1 rounded-full bg-muted/30 p-0.5">
+                 {SORT_OPTIONS.map((option) => (
                    <button
                      key={option.value}
                      type="button"
-                     onClick={() => setSelectedPeriod(option.value)}
+                     onClick={() => setSortMode(option.value)}
                      className={cn(
-                       "px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors",
-                       selectedPeriod === option.value
-                         ? "nier-arrows bg-foreground px-3 text-background"
+                       "rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors",
+                       sortMode === option.value
+                         ? "bg-foreground text-background"
                          : "text-muted-foreground hover:text-foreground"
                      )}
                    >
@@ -885,20 +864,40 @@ export function DashboardView({ initialData }: DashboardViewProps) {
                  ))}
                </div>
              </div>
+           )}
+
+           <div className="flex items-center gap-2 rounded-full border border-border/60 bg-background/50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+             <span className="pl-1">可用性区间</span>
+             <div className="flex items-center gap-1 rounded-full bg-muted/30 p-0.5">
+               {PERIOD_OPTIONS.map((option) => (
+                 <button
+                   key={option.value}
+                   type="button"
+                   onClick={() => setSelectedPeriod(option.value)}
+                   className={cn(
+                     "rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors",
+                     selectedPeriod === option.value
+                       ? "bg-foreground text-background"
+                       : "text-muted-foreground hover:text-foreground"
+                   )}
+                 >
+                   {option.label}
+                 </button>
+               ))}
+             </div>
            </div>
 
-           {/* 状态灯 + 更新信息：同一行 */}
-           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 lg:justify-end">
-           <div className="flex items-center gap-2 border border-foreground/40 bg-background/60 px-2.5 py-1">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping bg-(--status-ok) opacity-75" />
-                <span className="relative inline-flex h-2 w-2 bg-(--status-ok)" />
+           {/* Status Pill */}
+           <div className="flex items-center gap-2 rounded-full border border-border/60 bg-background/50 px-4 py-1.5 backdrop-blur-sm">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
               </span>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">Operational</span>
+              <span className="text-xs font-semibold uppercase tracking-wider">Operational</span>
            </div>
 
            {lastUpdated && (
-             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs font-medium text-muted-foreground">
+             <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <RefreshCcw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />
                   <span>更新于 <ClientTime value={lastUpdated} /></span>
@@ -910,7 +909,7 @@ export function DashboardView({ initialData }: DashboardViewProps) {
                   onClick={() => refresh(selectedPeriod, true)}
                   disabled={isRefreshing}
                   className={cn(
-                    "nier-invert-hover border border-foreground/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground",
+                    "rounded-full border border-border/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:border-border/80 hover:text-foreground",
                     isRefreshing && "cursor-not-allowed opacity-60"
                   )}
                 >
@@ -918,7 +917,6 @@ export function DashboardView({ initialData }: DashboardViewProps) {
                 </button>
              </div>
            )}
-           </div>
         </div>
       </header>
 

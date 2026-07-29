@@ -38,110 +38,89 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: 0;
-  --radius-md: 0;
-  --radius-lg: 0;
-  --radius-xl: 0;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
   --font-heading: var(--font-mono);
-  --radius-2xl: 0;
-  --radius-3xl: 0;
-  --radius-4xl: 0;
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/*
- * NieR: Automata 主题
- * 亮色 = 游戏菜单的米黄纸面（YoRHa UI），暗色 = 同一套 UI 的夜间反转。
- * 全站禁用圆角，阴影为实心平移块。
- */
 :root {
-  --radius: 0rem;
-  --background: #dcd8c0;
-  --foreground: #454138;
-  --card: #cfcbb2;
-  --card-foreground: #454138;
-  --popover: #e4e0ca;
-  --popover-foreground: #454138;
-  --primary: #454138;
-  --primary-foreground: #dcd8c0;
-  --secondary: #b5b09a;
-  --secondary-foreground: #454138;
-  --muted: #c8c3ab;
-  --muted-foreground: #736f5c;
-  --accent: #b5b09a;
-  --accent-foreground: #454138;
-  --destructive: #b5533c;
-  --border: #8c8871;
-  --input: #8c8871;
-  --ring: #454138;
-  --status-ok: #667a4e;
-  --status-warn: #a8863d;
-  --status-bad: #b5533c;
-  --status-info: #5e7c8b;
-  --chart-1: #b3a26b;
-  --chart-2: #9c8f5f;
-  --chart-3: #857c52;
-  --chart-4: #6e6845;
-  --chart-5: #575438;
-  --sidebar: #c6c2ab;
-  --sidebar-foreground: #454138;
-  --sidebar-primary: #454138;
-  --sidebar-primary-foreground: #dcd8c3;
-  --sidebar-accent: #bab59c;
-  --sidebar-accent-foreground: #454138;
-  --sidebar-border: #a29d84;
-  --sidebar-ring: #454138;
+  --radius: 0.625rem;
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.555 0.163 48.998);
+  --primary-foreground: oklch(0.987 0.022 95.277);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.879 0.169 91.605);
+  --chart-2: oklch(0.769 0.188 70.08);
+  --chart-3: oklch(0.666 0.179 58.318);
+  --chart-4: oklch(0.555 0.163 48.998);
+  --chart-5: oklch(0.473 0.137 46.201);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.666 0.179 58.318);
+  --sidebar-primary-foreground: oklch(0.987 0.022 95.277);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
 }
 
 .dark {
-  --background: #33312a;
-  --foreground: #d1cdb7;
-  --card: #3d3b32;
-  --card-foreground: #d1cdb7;
-  --popover: #3d3b32;
-  --popover-foreground: #d1cdb7;
-  --primary: #d1cdb7;
-  --primary-foreground: #33312a;
-  --secondary: #4a473e;
-  --secondary-foreground: #d1cdb7;
-  --muted: #45423a;
-  --muted-foreground: #98947e;
-  --accent: #4a473e;
-  --accent-foreground: #d1cdb7;
-  --destructive: #cd664d;
-  --border: #5f5b4a;
-  --input: #5f5b4a;
-  --ring: #d1cdb7;
-  --status-ok: #8a9a5b;
-  --status-warn: #c9a86a;
-  --status-bad: #cd664d;
-  --status-info: #7d99a8;
-  --chart-1: #c9b877;
-  --chart-2: #b0a069;
-  --chart-3: #97895a;
-  --chart-4: #7e724c;
-  --chart-5: #655c3e;
-  --sidebar: #34322b;
-  --sidebar-foreground: #c9c5ae;
-  --sidebar-primary: #c9c5ae;
-  --sidebar-primary-foreground: #2e2c25;
-  --sidebar-accent: #45423a;
-  --sidebar-accent-foreground: #c9c5ae;
-  --sidebar-border: #5a5647;
-  --sidebar-ring: #c9c5ae;
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.473 0.137 46.201);
+  --primary-foreground: oklch(0.987 0.022 95.277);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.879 0.169 91.605);
+  --chart-2: oklch(0.769 0.188 70.08);
+  --chart-3: oklch(0.666 0.179 58.318);
+  --chart-4: oklch(0.555 0.163 48.998);
+  --chart-5: oklch(0.473 0.137 46.201);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.769 0.188 70.08);
+  --sidebar-primary-foreground: oklch(0.279 0.077 45.635);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-
-  /* NieR UI 没有圆角：覆盖所有组件里硬编码的 rounded-* */
-  *,
-  *::before,
-  *::after {
-    border-radius: 0 !important;
-  }
-
   html {
     @apply bg-background text-foreground font-mono;
   }
@@ -150,145 +129,18 @@
     @apply relative min-h-screen bg-background text-foreground;
   }
 
-  ::selection {
-    background: var(--foreground);
-    color: var(--background);
-  }
-
-  /* 菱形网格底纹（游戏菜单背景的斜向格），衬在扫描线之下 */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     z-index: -1;
-    background-image:
-      repeating-linear-gradient(45deg, var(--border) 0, var(--border) 1px, transparent 1px, transparent 48px),
-      repeating-linear-gradient(-45deg, var(--border) 0, var(--border) 1px, transparent 1px, transparent 48px);
+    background-image: 
+      linear-gradient(to right, var(--border) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: -1px -1px;
     mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-    opacity: 0.25;
+    opacity: 0.6;
     pointer-events: none;
-  }
-
-  /* CRT 扫描线 + 轻微暗角，覆盖在所有内容之上 */
-  body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    pointer-events: none;
-    background-image: repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 4px,
-      color-mix(in srgb, var(--foreground) 2.5%, transparent) 4px,
-      color-mix(in srgb, var(--foreground) 2.5%, transparent) 5px
-    );
-    box-shadow: inset 0 0 100px color-mix(in srgb, var(--foreground) 7%, transparent);
-  }
-}
-
-@layer components {
-  /* NieR 菜单面板的实心平移阴影 */
-  .nier-shadow {
-    box-shadow: 3px 3px 0 0 color-mix(in srgb, var(--foreground) 18%, transparent);
-  }
-
-  /* 大标题的平移重影（游戏标题字的错位投影） */
-  .nier-text-shadow {
-    text-shadow: 3px 3px 0 color-mix(in srgb, var(--foreground) 18%, transparent);
-  }
-
-  /* 悬停反色：NieR 列表项被选中时整块反白 */
-  .nier-invert-hover {
-    transition: background-color 0.15s ease, color 0.15s ease;
-  }
-  .nier-invert-hover:hover {
-    background-color: var(--foreground);
-    color: var(--background);
-  }
-
-  /* 标题左侧的 ■ 方块标记 */
-  .nier-marker::before {
-    content: "";
-    display: inline-block;
-    width: 0.6em;
-    height: 0.6em;
-    margin-right: 0.6em;
-    background-color: currentColor;
-    vertical-align: baseline;
-  }
-
-  /* 标题下方的渐隐分隔线 */
-  .nier-rule {
-    height: 2px;
-    background: linear-gradient(to right, var(--foreground) 0%, transparent 100%);
-    opacity: 0.5;
-  }
-
-  /* 选中项左右的三角光标（游戏菜单选中态） */
-  .nier-arrows {
-    position: relative;
-  }
-  .nier-arrows::before,
-  .nier-arrows::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    border-top: 3px solid transparent;
-    border-bottom: 3px solid transparent;
-    animation: nier-arrow-in 0.15s ease-out;
-  }
-  .nier-arrows::before {
-    left: 1px;
-    border-left: 4px solid currentColor;
-  }
-  .nier-arrows::after {
-    right: 1px;
-    border-right: 4px solid currentColor;
-  }
-
-  /* 开机自检文字逐行出现 */
-  .nier-boot-line {
-    opacity: 0;
-    animation: nier-boot-line 0.05s steps(1) forwards;
-  }
-
-  /* 块状闪烁光标 */
-  .nier-caret {
-    display: inline-block;
-    height: 1em;
-    width: 0.6em;
-    background: currentColor;
-    vertical-align: text-bottom;
-    animation: nier-caret-blink 0.8s steps(1) infinite;
-  }
-}
-
-@keyframes nier-arrow-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes nier-boot-line {
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes nier-caret-blink {
-  50% {
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .nier-boot-line {
-    animation: none;
-    opacity: 1;
   }
 }

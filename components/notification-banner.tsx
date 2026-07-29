@@ -44,9 +44,9 @@ export function NotificationBanner() {
   const notification = notifications[currentIndex];
 
   const levelStyles = {
-    info: "bg-(--status-info)/10 text-(--status-info) border-(--status-info)/40",
-    warning: "bg-(--status-warn)/10 text-(--status-warn) border-(--status-warn)/40",
-    error: "bg-(--status-bad)/10 text-(--status-bad) border-(--status-bad)/40",
+    info: "bg-blue-50/90 text-blue-900 border-blue-200 dark:bg-blue-950/50 dark:text-blue-100 dark:border-blue-800",
+    warning: "bg-amber-50/90 text-amber-900 border-amber-200 dark:bg-amber-950/50 dark:text-amber-100 dark:border-amber-800",
+    error: "bg-red-50/90 text-red-900 border-red-200 dark:bg-red-950/50 dark:text-red-100 dark:border-red-800",
   };
 
   const Icon = {
@@ -57,7 +57,7 @@ export function NotificationBanner() {
 
   return (
     <div className={cn(
-      "relative w-full border-b px-4 py-3 text-sm transition-all animate-in fade-in slide-in-from-top-2",
+      "relative w-full border-b px-4 py-3 text-sm backdrop-blur-sm transition-all animate-in fade-in slide-in-from-top-2",
       levelStyles[notification.level] || levelStyles.info
     )}>
       <div className="mx-auto flex max-w-[1600px] items-start gap-3 md:items-center">
@@ -69,7 +69,7 @@ export function NotificationBanner() {
         </div>
         <button
           onClick={() => setVisible(false)}
-          className="ml-2 border border-current/30 p-1 opacity-70 transition-opacity hover:opacity-100"
+          className="ml-2 rounded-full p-1 opacity-70 hover:bg-black/5 hover:opacity-100 dark:hover:bg-white/10"
         >
           <X className="h-4 w-4" />
           <span className="sr-only">Dismiss</span>

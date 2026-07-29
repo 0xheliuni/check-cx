@@ -5,7 +5,6 @@ import "@/lib/core/poller";
 import NextTopLoader from "nextjs-toploader";
 import {ThemeProvider} from "@/components/theme-provider";
 import {NotificationBanner} from "@/components/notification-banner";
-import {NierBoot} from "@/components/nier-boot";
 import { cn } from "@/lib/utils";
 
 const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-mono'});
@@ -52,7 +51,6 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <NierBoot />
         <NextTopLoader color="var(--foreground)" showSpinner={false} />
         <ThemeProvider
           attribute="class"
