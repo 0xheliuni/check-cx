@@ -1,5 +1,5 @@
 import type {Metadata} from "next";
-import {Geist, Geist_Mono, JetBrains_Mono } from "next/font/google";
+import {JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import "@/lib/core/poller";
 import NextTopLoader from "nextjs-toploader";
@@ -8,16 +8,6 @@ import {NotificationBanner} from "@/components/notification-banner";
 import { cn } from "@/lib/utils";
 
 const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-mono'});
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "LINUX DO - 模型中转状态检测",
@@ -48,9 +38,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: themeBootScript }}
         />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="antialiased">
         <NextTopLoader color="var(--foreground)" showSpinner={false} />
         <ThemeProvider
           attribute="class"
