@@ -95,11 +95,14 @@ function stringifySanitizedError(error: unknown): string {
   }
 
   try {
-    return JSON.stringify(sanitized, null, 2);
+    return JSON.stringify(sanitized);
   } catch {
     return String(sanitized);
   }
 }
+
+/** logMessage 最大长度，超出部分截断 */
+const MAX_LOG_MESSAGE_LENGTH = 500;
 
 /**
  * 统一的错误日志记录
@@ -110,8 +113,22 @@ export function logError(context: string, error: unknown): void {
   console.error(`[check-cx] ${context}:`, sanitizeError(error));
 }
 
+/**
+ * 生成简洁的单行错误详情，用于后台日志记录（logMessage）
+ *
+ * 优先取 API 响应中返回的错误信息（responseBody 里的 message），
+ * 格式：`ErrorName: [statusCode] message`（截断至 500 字符）。
+ * 不包含 stack trace 和完整 responseBody，避免日志冗长
+ */
 export function getSanitizedErrorDetail(error: unknown): string {
-  return stringifySanitizedError(error);
+  const detail =
+    error instanceof Error
+      ? `${error.name}: ${getErrorMessage(error)}`
+      : stringifySanitizedError(error);
+
+  return detail.length > MAX_LOG_MESSAGE_LENGTH
+    ? `${detail.slice(0, MAX_LOG_MESSAGE_LENGTH)}…`
+    : detail;
 }
 
 /**

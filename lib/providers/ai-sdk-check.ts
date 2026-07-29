@@ -13,7 +13,7 @@
  * 4. 根据延迟阈值判定健康状态（operational/degraded/failed）
  *
  * 特殊支持：
- * - 推理模型（o1/o3/deepseek-r1 等）的 reasoning_effort 参数
+ * - 推理模型（o1/o3/deepseek-r1 等）的 reasoning 参数
  * - 自定义请求头和 metadata 注入
  * - 端点 Ping 延迟测量
  */
@@ -22,7 +22,7 @@ import { streamText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createGoogle } from "@ai-sdk/google";
 
 import type { CheckResult, HealthStatus, ProviderConfig } from "../types";
 import { DEFAULT_ENDPOINTS } from "../types";
@@ -155,7 +155,7 @@ function isResponsesEndpoint(endpoint: string | null | undefined): boolean {
 /**
  * 推理强度级别
  *
- * 用于 OpenAI 推理模型（o1/o3 系列）的 reasoning_effort 参数：
+ * 对应 AI SDK 顶层 `reasoning` 选项（provider-agnostic）：
  * - low：快速推理，token 消耗少
  * - medium：平衡模式（推理模型默认值）
  * - high：深度推理，结果更准确但 token 消耗多
@@ -348,7 +348,7 @@ function createModel(config: ProviderConfig) {
       if (isGoogleGenerativeEndpoint(endpoint)) {
         // 原生 Gemini API：使用 @ai-sdk/google
         const googleBaseURL = extractGoogleBaseURL(endpoint);
-        const provider = createGoogleGenerativeAI({
+        const provider = createGoogle({
           apiKey: config.apiKey,
           baseURL: googleBaseURL,
           fetch: customFetch,
@@ -495,8 +495,6 @@ function buildCheckResult(
  * - error：请求过程中发生异常
  */
 export async function checkWithAiSdk(config: ProviderConfig): Promise<CheckResult> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
   const startedAt = Date.now();
 
   const displayEndpoint = config.endpoint || DEFAULT_ENDPOINTS[config.type];
@@ -513,12 +511,6 @@ export async function checkWithAiSdk(config: ProviderConfig): Promise<CheckResul
   try {
     const { model, reasoningEffort } = createModel(config);
 
-    // 仅 OpenAI 推理模型需要 providerOptions
-    const providerOptions =
-      reasoningEffort && config.type === "openai"
-        ? { openai: { reasoningEffort } }
-        : undefined;
-
     // 捕获流处理过程中的错误
     let streamError: AIApiCallError | null = null;
 
@@ -527,9 +519,8 @@ export async function checkWithAiSdk(config: ProviderConfig): Promise<CheckResul
     const result = streamText({
       model,
       prompt: challenge.prompt,
-      abortSignal: controller.signal,
-      ...(providerOptions && { providerOptions }),
-      ...(reasoningEffort ? {} : { maxOutputTokens: 24 }),
+      timeout: DEFAULT_TIMEOUT_MS,
+      ...(reasoningEffort ? { reasoning: reasoningEffort } : { maxOutputTokens: 24 }),
       onError({ error }) {
         streamError = error as AIApiCallError;
       },
@@ -587,7 +578,5 @@ export async function checkWithAiSdk(config: ProviderConfig): Promise<CheckResul
       getErrorMessage(error as AIApiCallError),
       getSanitizedErrorDetail(error)
     );
-  } finally {
-    clearTimeout(timeout);
   }
 }
