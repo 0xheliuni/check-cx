@@ -25,11 +25,11 @@ export async function generateMetadata({ params }: GroupPageProps) {
 export default function GroupPage({ params }: GroupPageProps) {
   return (
     <div className="min-h-screen py-8 md:py-16">
-      <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-3 sm:gap-8 sm:px-6 lg:px-12">
+      <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 sm:gap-8 sm:px-6">
         {/* 返回首页链接 */}
         <Link
           href="/"
-          className="inline-flex w-fit items-center gap-1.5 rounded-full border border-border/40 bg-background/60 px-4 py-1.5 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur-sm transition hover:border-border/80 hover:text-foreground"
+          className="inline-flex w-fit items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
         >
           <ChevronLeft className="h-4 w-4" />
           返回首页

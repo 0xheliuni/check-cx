@@ -5,8 +5,6 @@ import "@/lib/core/poller";
 import NextTopLoader from "nextjs-toploader";
 import {ThemeProvider} from "@/components/theme-provider";
 import {NotificationBanner} from "@/components/notification-banner";
-import { cn } from "@/lib/utils";
-
 const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-mono'});
 
 export const metadata: Metadata = {
@@ -31,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" suppressHydrationWarning className={cn("font-mono", jetbrainsMono.variable)}>
+    <html lang="zh-CN" suppressHydrationWarning className={jetbrainsMono.variable}>
       <head>
         <script
           id="theme-boot"

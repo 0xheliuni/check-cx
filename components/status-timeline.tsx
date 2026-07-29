@@ -153,10 +153,10 @@ export function StatusTimeline({ items, nextRefreshInMs, isMaintenance }: Status
                 </HoverCardTrigger>
                 <HoverCardContent
                   side="top"
-                  className="w-64 space-y-3 rounded-xl border-border/50 bg-background/95 p-4 shadow-xl backdrop-blur-xl"
+                  className="w-64 space-y-3 rounded-xl border-border/50 bg-popover p-4 shadow-xl"
                 >
                    <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                      <Badge variant={preset.badge} className="h-5 px-1.5 text-[10px]">{preset.label}</Badge>
+                      <Badge className={cn("h-5 px-1.5 text-[10px]", preset.badgeClass)}>{preset.label}</Badge>
                       <ClientTime value={segment.checkedAt} className="font-mono text-[10px] text-muted-foreground" />
                    </div>
                    

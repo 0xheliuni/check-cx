@@ -15,14 +15,17 @@ const PERIOD_LABELS: Record<AvailabilityPeriod, string> = {
   "30d": "30 天",
 };
 
-function getAvailabilityColorStyle(pct: number | null | undefined) {
+function getAvailabilityColorClass(pct: number | null | undefined) {
   if (pct === null || pct === undefined) {
-    return undefined;
+    return "text-muted-foreground";
   }
-  const clamped = Math.max(0, Math.min(100, pct));
-  // 0 -> red, 100 -> green
-  const hue = (clamped / 100) * 120;
-  return { color: `hsl(${hue} 80% 45%)` };
+  if (pct >= 99) {
+    return "text-emerald-600 dark:text-emerald-400";
+  }
+  if (pct >= 95) {
+    return "text-amber-600 dark:text-amber-400";
+  }
+  return "text-red-600 dark:text-red-400";
 }
 
 export function AvailabilityStats({ stats, period, isMaintenance }: AvailabilityStatsProps) {
@@ -63,13 +66,7 @@ export function AvailabilityStats({ stats, period, isMaintenance }: Availability
             : "暂无数据"}
         </p>
       </div>
-      <span
-        className={cn(
-          "font-mono text-sm font-bold",
-          pct === null ? "text-muted-foreground" : ""
-        )}
-        style={getAvailabilityColorStyle(pct)}
-      >
+      <span className={cn("font-mono text-sm font-bold", getAvailabilityColorClass(pct))}>
         {pctLabel}
       </span>
     </div>
