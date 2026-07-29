@@ -4,8 +4,6 @@ import { loadProviderConfigsFromDB } from "@/lib/database/config-loader";
 import { getPollingIntervalMs, getPollingIntervalLabel } from "@/lib/core/polling-config";
 import type { CheckResult, HealthStatus } from "@/lib/types";
 
-export const revalidate = 0;
-export const dynamic = "force-dynamic";
 
 interface ProviderStatistics {
   totalChecks: number;

@@ -1,12 +1,11 @@
 import {notFound} from "next/navigation";
 import Link from "next/link";
+import {Suspense} from "react";
 import {ChevronLeft} from "lucide-react";
 
 import {GroupDashboardBootstrap} from "@/components/group-dashboard-bootstrap";
 import {getAvailableGroups} from "@/lib/core/group-data";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 interface GroupPageProps {
   params: Promise<{ groupName: string }>;
@@ -23,15 +22,7 @@ export async function generateMetadata({ params }: GroupPageProps) {
   };
 }
 
-export default async function GroupPage({ params }: GroupPageProps) {
-  const { groupName } = await params;
-  const decodedGroupName = decodeURIComponent(groupName);
-
-  const availableGroups = await getAvailableGroups();
-  if (!availableGroups.includes(decodedGroupName)) {
-    notFound();
-  }
-
+export default function GroupPage({ params }: GroupPageProps) {
   return (
     <div className="min-h-screen py-8 md:py-16">
       <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-3 sm:gap-8 sm:px-6 lg:px-12">
@@ -44,8 +35,22 @@ export default async function GroupPage({ params }: GroupPageProps) {
           返回首页
         </Link>
 
-        <GroupDashboardBootstrap groupName={decodedGroupName} />
+        <Suspense fallback={null}>
+          <GroupContent params={params} />
+        </Suspense>
       </main>
     </div>
   );
+}
+
+async function GroupContent({ params }: GroupPageProps) {
+  const { groupName } = await params;
+  const decodedGroupName = decodeURIComponent(groupName);
+
+  const availableGroups = await getAvailableGroups();
+  if (!availableGroups.includes(decodedGroupName)) {
+    notFound();
+  }
+
+  return <GroupDashboardBootstrap groupName={decodedGroupName} />;
 }
