@@ -100,18 +100,32 @@ export async function getAvailabilityStats(
 
   const ttl = getPollingIntervalMs();
   const now = Date.now();
-  if (now - cache.lastFetchedAt < ttl && Object.keys(cache.data).length > 0) {
+  // 缓存可能由子集查询填充，命中前需确认覆盖本次请求的所有 id
+  const cacheCovers =
+    !normalizedIds || normalizedIds.every((id) => id in cache.data);
+  if (
+    cacheCovers &&
+    now - cache.lastFetchedAt < ttl &&
+    Object.keys(cache.data).length > 0
+  ) {
     metrics.hits += 1;
     return filterStats(cache.data, normalizedIds);
   }
   metrics.misses += 1;
 
   const supabase = createAdminClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("availability_stats")
     .select("config_id, period, total_checks, operational_count, availability_pct")
     .order("config_id", { ascending: true })
     .order("period", { ascending: true });
+
+  // 有明确 id 列表时过滤下推到数据库，减少传输与 JS filter
+  if (normalizedIds) {
+    query = query.in("config_id", normalizedIds);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     logError("读取可用性统计失败", error);
@@ -119,7 +133,8 @@ export async function getAvailabilityStats(
   }
 
   const mapped = mapRows(data as AvailabilityStats[] | null);
-  cache.data = mapped;
+  // 合并而非替换：子集查询不能清掉其他 config 的缓存
+  Object.assign(cache.data, mapped);
   cache.lastFetchedAt = now;
 
   return filterStats(mapped, normalizedIds);

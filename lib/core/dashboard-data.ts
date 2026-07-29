@@ -131,15 +131,21 @@ async function loadDashboardDataInternal(options?: {
   const shouldBypassCache = refreshMode === "always";
 
   const loadData = async (): Promise<DashboardLoadResult> => {
-    const history = await loadSnapshotForScope(
-      {
-        cacheKey,
-        pollIntervalMs,
-        activeConfigs,
-        allowedIds,
-      },
-      refreshMode
-    );
+    // history / groupInfos / availabilityStats 互不依赖，并行拉取
+    const configIds = allConfigs.map((config) => config.id);
+    const [history, groupInfos, availabilityStats] = await Promise.all([
+      loadSnapshotForScope(
+        {
+          cacheKey,
+          pollIntervalMs,
+          activeConfigs,
+          allowedIds,
+        },
+        refreshMode
+      ),
+      loadGroupInfos(),
+      getAvailabilityStats(configIds),
+    ]);
 
     const providerTimelines = buildProviderTimelines(history, maintenanceConfigs);
 
@@ -154,14 +160,11 @@ async function loadDashboardDataInternal(options?: {
     }
 
     const generatedAt = Date.now();
-    const groupInfos = await loadGroupInfos();
     const groupInfoSummaries: GroupInfoSummary[] = groupInfos.map((info) => ({
       groupName: info.group_name,
       websiteUrl: info.website_url ?? null,
       tags: info.tags ?? "",
     }));
-    const configIds = allConfigs.map((config) => config.id);
-    const availabilityStats = await getAvailabilityStats(configIds);
 
     const data: DashboardData = {
       providerTimelines,

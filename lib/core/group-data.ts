@@ -132,15 +132,21 @@ export async function loadGroupDashboardData(
   const shouldBypassCache = refreshMode === "always";
 
   const loadData = async (): Promise<GroupDashboardData | null> => {
-    const history = await loadSnapshotForScope(
-      {
-        cacheKey,
-        pollIntervalMs,
-        activeConfigs,
-        allowedIds,
-      },
-      refreshMode
-    );
+    // history / availabilityStats / groupInfo 互不依赖，并行拉取
+    const configIds = groupConfigs.map((config) => config.id);
+    const [history, availabilityStats, groupInfo] = await Promise.all([
+      loadSnapshotForScope(
+        {
+          cacheKey,
+          pollIntervalMs,
+          activeConfigs,
+          allowedIds,
+        },
+        refreshMode
+      ),
+      getAvailabilityStats(configIds),
+      isTargetUngrouped ? Promise.resolve(null) : getGroupInfo(targetGroupName),
+    ]);
 
     const providerTimelines = buildProviderTimelines(history, maintenanceConfigs);
 
@@ -155,17 +161,10 @@ export async function loadGroupDashboardData(
     }
 
     const generatedAt = Date.now();
-    const configIds = groupConfigs.map((config) => config.id);
-    const availabilityStats = await getAvailabilityStats(configIds);
 
-    // 获取分组信息（仅对有名分组）
-    let websiteUrl: string | undefined | null;
-    let tags = "";
-    if (!isTargetUngrouped) {
-      const groupInfo = await getGroupInfo(targetGroupName);
-      websiteUrl = groupInfo?.website_url;
-      tags = groupInfo?.tags ?? "";
-    }
+    // 分组信息（未分组时为 null）
+    const websiteUrl = groupInfo?.website_url;
+    const tags = groupInfo?.tags ?? "";
 
     const data: GroupDashboardData = {
       groupName: targetGroupName,

@@ -28,6 +28,12 @@ export const HISTORY_RETENTION_DAYS = (() => {
 const RPC_RECENT_HISTORY = "get_recent_check_history";
 const RPC_PRUNE_HISTORY = "prune_check_history";
 
+/**
+ * append 后自动清理的最小间隔：12 小时
+ * 避免每个轮询周期都执行一次全表范围 DELETE
+ */
+const AUTO_PRUNE_INTERVAL_MS = 12 * 60 * 60 * 1000;
+
 type AdminClient = ReturnType<typeof createAdminClient>;
 
 export interface HistoryQueryOptions {
@@ -62,6 +68,8 @@ interface JoinedConfigRow {
  * SnapshotStore 负责与数据库交互，提供统一的读/写/清理接口
  */
 class SnapshotStore {
+  private lastAutoPruneAt = 0;
+
   async fetch(options?: HistoryQueryOptions): Promise<HistorySnapshot> {
     const normalizedIds = normalizeAllowedIds(options?.allowedIds);
     if (Array.isArray(normalizedIds) && normalizedIds.length === 0) {
@@ -110,7 +118,11 @@ class SnapshotStore {
       return;
     }
 
-    await this.pruneInternal(supabase);
+    const now = Date.now();
+    if (now - this.lastAutoPruneAt >= AUTO_PRUNE_INTERVAL_MS) {
+      this.lastAutoPruneAt = now;
+      await this.pruneInternal(supabase);
+    }
   }
 
   async prune(retentionDays: number = HISTORY_RETENTION_DAYS): Promise<void> {

@@ -13,13 +13,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 // 开发模式使用 dev schema，生产模式使用 public schema
 const DB_SCHEMA = process.env.NODE_ENV === "development" ? "dev" : "public";
 
-/**
- * 创建管理员客户端（绕过 RLS）
- *
- * 注意：此客户端使用 service_role key，拥有完整的数据库访问权限
- * 仅应在服务端后台任务中使用
- */
-export function createAdminClient() {
+function buildAdminClient() {
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -36,4 +30,27 @@ export function createAdminClient() {
       persistSession: false,
     },
   });
+}
+
+type AdminClient = ReturnType<typeof buildAdminClient>;
+
+/**
+ * 模块级单例
+ *
+ * service_role client 无 cookie/session 状态，多请求共享安全；
+ * 避免每次调用都重建 GoTrue/PostgREST 客户端对象。
+ */
+let cachedClient: AdminClient | null = null;
+
+/**
+ * 获取管理员客户端（绕过 RLS）
+ *
+ * 注意：此客户端使用 service_role key，拥有完整的数据库访问权限
+ * 仅应在服务端后台任务中使用
+ */
+export function createAdminClient(): AdminClient {
+  if (!cachedClient) {
+    cachedClient = buildAdminClient();
+  }
+  return cachedClient;
 }
