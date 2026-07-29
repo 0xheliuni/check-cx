@@ -107,8 +107,10 @@ export function ProviderCard({
               <span className="truncate font-mono font-medium text-foreground/50">{latest.model}</span>
             </div>
             <Badge
-              variant={preset.badge}
-              className="shrink-0 whitespace-nowrap rounded-lg px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider shadow-sm backdrop-blur-md sm:px-2.5 sm:py-1 sm:text-xs"
+              className={cn(
+                "shrink-0 whitespace-nowrap px-2 py-0.5 text-[10px] font-semibold sm:px-2.5 sm:py-1 sm:text-xs",
+                preset.badgeClass
+              )}
             >
               {preset.label}
             </Badge>

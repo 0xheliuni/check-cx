@@ -5,45 +5,53 @@ export const STATUS_META: Record<
   {
     label: string;
     description: string;
-    badge: "default" | "secondary" | "destructive";
+    /** 完整 tinted-badge class，直接传给 Badge 的 className */
+    badgeClass: string;
+    /** 状态圆点/时间线段背景色 */
     dot: string;
   }
 > = {
   operational: {
     label: "正常",
     description: "请求响应如常",
-    badge: "default",
+    badgeClass:
+      "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
     dot: "bg-emerald-500",
   },
   degraded: {
     label: "延迟",
     description: "响应成功但耗时升高",
-    badge: "secondary",
+    badgeClass:
+      "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
     dot: "bg-amber-500",
   },
   failed: {
     label: "异常",
     description: "请求失败或超时",
-    badge: "destructive",
-    dot: "bg-rose-500",
+    badgeClass:
+      "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400",
+    dot: "bg-red-500",
   },
   validation_failed: {
     label: "验证失败",
     description: "请求成功但回答未通过验证",
-    badge: "secondary",
+    badgeClass:
+      "border-orange-500/30 bg-orange-500/10 text-orange-700 dark:text-orange-400",
     dot: "bg-orange-500",
   },
   maintenance: {
     label: "维护中",
     description: "人工维护,已停止检查",
-    badge: "secondary",
+    badgeClass:
+      "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400",
     dot: "bg-blue-500",
   },
   error: {
     label: "错误",
     description: "请求异常（网络错误、API报错、连接失败）",
-    badge: "destructive",
-    dot: "bg-red-600",
+    badgeClass:
+      "border-rose-600/30 bg-rose-600/10 text-rose-700 dark:text-rose-400",
+    dot: "bg-rose-600",
   },
 };
 
