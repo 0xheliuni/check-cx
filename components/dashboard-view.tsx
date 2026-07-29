@@ -34,6 +34,7 @@ import {CSS} from "@dnd-kit/utilities";
 
 import {GroupTags} from "@/components/group-tags";
 import {ProviderCard} from "@/components/provider-card";
+import {StatusSummary} from "@/components/status-summary";
 import {ThemeToggle} from "@/components/theme-toggle";
 import {Collapsible, CollapsibleContent, CollapsibleTrigger} from "@/components/ui/collapsible";
 import {ClientTime} from "@/components/client-time";
@@ -260,38 +261,7 @@ function GroupPanel({
                 </a>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-               {statusSummary.operational > 0 && (
-                 <span className="flex items-center gap-1.5 whitespace-nowrap">
-                   <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                   {statusSummary.operational} 正常
-                 </span>
-               )}
-               {statusSummary.degraded > 0 && (
-                 <span className="flex items-center gap-1.5 whitespace-nowrap">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                    {statusSummary.degraded} 延迟
-                 </span>
-               )}
-               {statusSummary.failed > 0 && (
-                 <span className="flex items-center gap-1.5 whitespace-nowrap">
-                    <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                    {statusSummary.failed} 异常
-                 </span>
-               )}
-               {statusSummary.validation_failed > 0 && (
-                 <span className="flex items-center gap-1.5 whitespace-nowrap">
-                    <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                    {statusSummary.validation_failed} 验证失败
-                 </span>
-               )}
-               {statusSummary.error > 0 && (
-                 <span className="flex items-center gap-1.5 whitespace-nowrap">
-                    <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
-                    {statusSummary.error} 错误
-                 </span>
-               )}
-            </div>
+            <StatusSummary counts={statusSummary} className="text-xs sm:text-sm" />
           </div>
         </CollapsibleTrigger>
         

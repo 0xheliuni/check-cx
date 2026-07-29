@@ -5,6 +5,7 @@ import {Activity, ExternalLink, RefreshCcw} from "lucide-react";
 
 import {GroupTags} from "@/components/group-tags";
 import {ProviderCard} from "@/components/provider-card";
+import {StatusSummary} from "@/components/status-summary";
 import {ClientTime} from "@/components/client-time";
 import {fetchGroupWithCache, prefetchGroupData, setGroupCache} from "@/lib/core/group-frontend-cache";
 import type {AvailabilityPeriod, ProviderTimeline} from "@/lib/types";
@@ -229,42 +230,7 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
           </div>
           
            <div className="flex flex-wrap items-center gap-2.5">
-            {statusSummary.operational > 0 && (
-               <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-400">
-                 <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                {statusSummary.operational} 正常
-              </span>
-            )}
-            {statusSummary.degraded > 0 && (
-               <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                {statusSummary.degraded} 延迟
-              </span>
-            )}
-            {statusSummary.failed > 0 && (
-               <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:text-red-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                {statusSummary.failed} 异常
-              </span>
-            )}
-            {statusSummary.validation_failed > 0 && (
-               <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/10 px-2.5 py-0.5 text-xs font-medium text-orange-700 dark:text-orange-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                {statusSummary.validation_failed} 验证失败
-              </span>
-            )}
-            {statusSummary.error > 0 && (
-               <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600/10 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:text-red-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
-                {statusSummary.error} 错误
-              </span>
-            )}
-             {statusSummary.maintenance > 0 && (
-               <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
-                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-                {statusSummary.maintenance} 维护
-              </span>
-            )}
+            <StatusSummary counts={statusSummary} />
             <span className="text-xs text-muted-foreground/60">|</span>
             <span className="text-xs text-muted-foreground">{total} 个配置</span>
           </div>
