@@ -9,3 +9,9 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+    # docker 内部日志用 local driver + 轮转，防止无限增长
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
