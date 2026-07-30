@@ -64,7 +64,12 @@ export function StatusTimeline({ items, nextRefreshInMs, isMaintenance }: Status
   if (items.length === 0) {
     if (isMaintenance) {
       return (
-        <div className="flex items-center justify-center rounded-lg border border-dashed border-blue-500/30 bg-blue-500/5 p-4 text-xs text-blue-500">
+        <div
+          className={cn(
+            "flex items-center justify-center rounded-lg border border-dashed p-4 text-xs",
+            STATUS_META.maintenance.badgeClass
+          )}
+        >
           维护中 · 已暂停时间线采集
         </div>
       );

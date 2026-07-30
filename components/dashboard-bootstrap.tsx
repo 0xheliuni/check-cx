@@ -4,8 +4,10 @@ import {useCallback, useEffect, useState} from "react";
 
 import {DashboardView} from "@/components/dashboard-view";
 import {DashboardSkeleton} from "@/components/dashboard-skeleton";
+import {STATUS_META} from "@/lib/core/status";
 import {fetchWithCache} from "@/lib/core/frontend-cache";
 import type {AvailabilityPeriod, DashboardData} from "@/lib/types";
+import {cn} from "@/lib/utils";
 
 const DEFAULT_PERIOD: AvailabilityPeriod = "7d";
 
@@ -69,12 +71,17 @@ export function DashboardBootstrap() {
         <DashboardSkeleton />
         {errorMessage && (
           <div className="mt-6 flex justify-center">
-            <div className="inline-flex items-center gap-3 rounded-full border border-border/60 bg-background/60 px-4 py-2 text-sm text-muted-foreground">
+            <div
+              className={cn(
+                "inline-flex items-center gap-3 rounded-lg border px-4 py-2 text-sm",
+                STATUS_META.error.badgeClass
+              )}
+            >
               <span>{errorMessage}</span>
               <button
                 type="button"
                 onClick={() => loadData(true)}
-                className="rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background transition-colors hover:bg-foreground/90"
+                className="rounded-md bg-foreground px-3 py-1 text-xs font-medium text-background transition-colors hover:bg-foreground/90"
               >
                 重新加载
               </button>

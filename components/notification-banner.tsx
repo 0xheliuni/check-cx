@@ -43,10 +43,11 @@ export function NotificationBanner() {
 
   const notification = notifications[currentIndex];
 
+  // light：实色浅底；dark：实色 card 底 + tinted 边/字，避免 *-950 重色压顶
   const levelStyles = {
-    info: "bg-blue-50 text-blue-900 border-blue-200 dark:bg-blue-950 dark:text-blue-100 dark:border-blue-800",
-    warning: "bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950 dark:text-amber-100 dark:border-amber-800",
-    error: "bg-red-50 text-red-900 border-red-200 dark:bg-red-950 dark:text-red-100 dark:border-red-800",
+    info: "border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-500/40 dark:bg-card dark:text-blue-400",
+    warning: "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-card dark:text-amber-400",
+    error: "border-red-200 bg-red-50 text-red-900 dark:border-red-500/40 dark:bg-card dark:text-red-400",
   };
 
   const Icon = {

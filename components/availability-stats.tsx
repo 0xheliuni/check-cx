@@ -1,5 +1,6 @@
 "use client";
 
+import {STATUS_META} from "@/lib/core/status";
 import type {AvailabilityPeriod, AvailabilityStat} from "@/lib/types";
 import {cn} from "@/lib/utils";
 
@@ -33,21 +34,27 @@ export function AvailabilityStats({ stats, period, isMaintenance }: Availability
   const pct = current?.availabilityPct ?? null;
   const pctLabel = pct === null ? "—" : `${pct.toFixed(2)}%`;
 
-  // 维护模式下的特殊展示
+  // 维护模式下的特殊展示：色板只读 STATUS_META.maintenance
   if (isMaintenance) {
+    const meta = STATUS_META.maintenance;
     return (
-      <div className="flex items-center justify-between rounded-lg border border-dashed border-blue-500/30 bg-blue-500/5 px-3 py-2">
+      <div
+        className={cn(
+          "flex items-center justify-between rounded-lg border border-dashed px-3 py-2",
+          meta.badgeClass
+        )}
+      >
         <div className="space-y-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-500">
+          <p className="text-[10px] font-semibold uppercase tracking-wider">
             可用性 ({PERIOD_LABELS[period]})
           </p>
-          <p className="text-[10px] text-blue-500/70">
+          <p className="text-[10px] opacity-70">
             {current
               ? `维护前 ${current.operationalCount}/${current.totalChecks} 成功`
               : "维护中 · 已暂停统计"}
           </p>
         </div>
-        <span className="font-mono text-sm font-bold text-blue-500">
+        <span className="font-mono text-sm font-bold">
           {pctLabel}
         </span>
       </div>
