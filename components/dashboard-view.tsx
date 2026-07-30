@@ -3,9 +3,11 @@
 import {useCallback, useEffect, useMemo, useState, useSyncExternalStore} from "react";
 import {fetchWithCache, prefetchDashboardData, setCache} from "@/lib/core/frontend-cache";
 import {prefetchGroupData} from "@/lib/core/group-frontend-cache";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Activity,
+  ArrowLeft,
   ChevronDown,
   ExternalLink,
   Github,
@@ -693,17 +695,31 @@ export function DashboardView({ initialData }: DashboardViewProps) {
       <header className="mb-6 space-y-4 sm:mb-8">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
           <div className="flex w-full items-center gap-3 sm:w-auto">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Activity className="h-4 w-4" />
-            </div>
+            <Image
+              src="/favicon.png"
+              alt="Check CX"
+              width={32}
+              height={32}
+              priority
+              className="h-8 w-8 shrink-0 rounded-lg object-contain"
+            />
             <h1 className="text-xl font-semibold tracking-tight">Check CX</h1>
             <span className="hidden text-sm text-muted-foreground sm:inline">
               AI 模型接口健康监控
             </span>
             <Link
+              href="https://linux.do"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground sm:ml-0"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Linux.do
+            </Link>
+            <Link
               href="https://github.com/BingZi-233/check-cx"
               target="_blank"
-              className="ml-auto text-muted-foreground transition-colors hover:text-foreground sm:ml-0"
+              className="text-muted-foreground transition-colors hover:text-foreground"
             >
               <Github className="h-4 w-4" />
             </Link>

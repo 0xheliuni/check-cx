@@ -110,7 +110,8 @@ export function DashboardSkeleton() {
             <SkeletonBlock className="h-8 w-8 shrink-0 rounded-lg" />
             <SkeletonBlock className="h-6 w-24" />
             <SkeletonBlock className="hidden h-4 w-32 sm:block" />
-            <SkeletonBlock className="ml-auto h-4 w-4 rounded sm:ml-0" />
+            <SkeletonBlock className="ml-auto h-6 w-20 shrink-0 rounded-full sm:ml-0" />
+            <SkeletonBlock className="h-4 w-4 rounded" />
             <SkeletonBlock className="h-8 w-8 rounded-lg" />
           </div>
 
