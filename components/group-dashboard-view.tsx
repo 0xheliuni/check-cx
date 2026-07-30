@@ -208,15 +208,15 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-1 rounded-md border bg-background p-0.5 text-xs">
+          <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 sm:w-auto">
+            <div className="flex flex-1 items-center gap-1 rounded-md border bg-background p-0.5 text-xs sm:flex-none">
               {PERIOD_OPTIONS.map((option) => (
                 <button
                   key={option.value}
                   type="button"
                   onClick={() => setSelectedPeriod(option.value)}
                   className={cn(
-                    "rounded px-2 py-1 font-medium transition-colors",
+                    "flex-1 whitespace-nowrap rounded px-2 py-1 font-medium transition-colors sm:flex-none",
                     selectedPeriod === option.value
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -228,17 +228,19 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
             </div>
 
             {lastUpdated && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <RefreshCcw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />
-                <span>更新于 <ClientTime value={lastUpdated} /></span>
-                <span className="opacity-30">|</span>
-                <span>{pollIntervalLabel} 轮询</span>
+              <div className="flex w-full min-w-0 items-center gap-2 text-xs text-muted-foreground sm:w-auto">
+                <RefreshCcw className={cn("h-3 w-3 shrink-0", isRefreshing && "animate-spin")} />
+                <span className="truncate">
+                  <span className="whitespace-nowrap">更新于 <ClientTime value={lastUpdated} /></span>
+                  <span className="mx-1.5 opacity-30">|</span>
+                  <span className="whitespace-nowrap">{pollIntervalLabel} 轮询</span>
+                </span>
                 <button
                   type="button"
                   onClick={() => refresh(selectedPeriod, true)}
                   disabled={isRefreshing}
                   className={cn(
-                    "rounded-lg border px-2.5 py-1 font-medium transition-colors hover:border-foreground/20 hover:text-foreground",
+                    "ml-auto shrink-0 rounded-lg border px-2.5 py-1 font-medium transition-colors hover:border-foreground/20 hover:text-foreground sm:ml-0",
                     isRefreshing && "cursor-not-allowed opacity-60"
                   )}
                 >

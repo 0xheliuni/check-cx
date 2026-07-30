@@ -691,9 +691,9 @@ export function DashboardView({ initialData }: DashboardViewProps) {
   return (
     <div className="relative">
       <header className="mb-6 space-y-4 sm:mb-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+          <div className="flex w-full items-center gap-3 sm:w-auto">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Activity className="h-4 w-4" />
             </div>
             <h1 className="text-xl font-semibold tracking-tight">Check CX</h1>
@@ -703,15 +703,15 @@ export function DashboardView({ initialData }: DashboardViewProps) {
             <Link
               href="https://github.com/BingZi-233/check-cx"
               target="_blank"
-              className="text-muted-foreground transition-colors hover:text-foreground"
+              className="ml-auto text-muted-foreground transition-colors hover:text-foreground sm:ml-0"
             >
               <Github className="h-4 w-4" />
             </Link>
             <ThemeToggle />
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-full border px-3 py-1">
+          <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 sm:w-auto">
+            <div className="flex shrink-0 items-center gap-2 rounded-full border px-3 py-1">
               <span className="relative flex h-2 w-2">
                 <span className={cn("absolute inline-flex h-full w-full animate-ping rounded-full opacity-75", STATUS_META.operational.dot)} />
                 <span className={cn("relative inline-flex h-2 w-2 rounded-full", STATUS_META.operational.dot)} />
@@ -719,17 +719,19 @@ export function DashboardView({ initialData }: DashboardViewProps) {
               <span className="text-xs font-medium">Operational</span>
             </div>
             {lastUpdated && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <RefreshCcw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />
-                <span>更新于 <ClientTime value={lastUpdated} /></span>
-                <span className="opacity-30">|</span>
-                <span>{pollIntervalLabel} 轮询</span>
+              <div className="flex min-w-0 flex-1 items-center gap-2 text-xs text-muted-foreground sm:flex-none">
+                <RefreshCcw className={cn("h-3 w-3 shrink-0", isRefreshing && "animate-spin")} />
+                <span className="truncate">
+                  <span className="whitespace-nowrap">更新于 <ClientTime value={lastUpdated} /></span>
+                  <span className="mx-1.5 opacity-30">|</span>
+                  <span className="whitespace-nowrap">{pollIntervalLabel} 轮询</span>
+                </span>
                 <button
                   type="button"
                   onClick={() => refresh(selectedPeriod, true)}
                   disabled={isRefreshing}
                   className={cn(
-                    "rounded-lg border px-2.5 py-1 font-medium transition-colors hover:border-foreground/20 hover:text-foreground",
+                    "ml-auto shrink-0 rounded-lg border px-2.5 py-1 font-medium transition-colors hover:border-foreground/20 hover:text-foreground sm:ml-0",
                     isRefreshing && "cursor-not-allowed opacity-60"
                   )}
                 >
@@ -798,15 +800,15 @@ export function DashboardView({ initialData }: DashboardViewProps) {
               </div>
             )}
 
-            <div className="ml-auto flex items-center gap-2">
-              <div className="flex items-center gap-1 rounded-md border bg-background p-0.5 text-xs">
+            <div className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
+              <div className="flex flex-1 items-center gap-1 rounded-md border bg-background p-0.5 text-xs sm:flex-none">
                 {SORT_OPTIONS.map((option) => (
                   <button
                     key={option.value}
                     type="button"
                     onClick={() => setSortMode(option.value)}
                     className={cn(
-                      "rounded px-2 py-1 font-medium transition-colors",
+                      "flex-1 whitespace-nowrap rounded px-2 py-1 font-medium transition-colors sm:flex-none",
                       sortMode === option.value
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:text-foreground"
@@ -817,14 +819,14 @@ export function DashboardView({ initialData }: DashboardViewProps) {
                 ))}
               </div>
 
-              <div className="flex items-center gap-1 rounded-md border bg-background p-0.5 text-xs">
+              <div className="flex flex-1 items-center gap-1 rounded-md border bg-background p-0.5 text-xs sm:flex-none">
                 {PERIOD_OPTIONS.map((option) => (
                   <button
                     key={option.value}
                     type="button"
                     onClick={() => setSelectedPeriod(option.value)}
                     className={cn(
-                      "rounded px-2 py-1 font-medium transition-colors",
+                      "flex-1 whitespace-nowrap rounded px-2 py-1 font-medium transition-colors sm:flex-none",
                       selectedPeriod === option.value
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:text-foreground"
