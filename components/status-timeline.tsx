@@ -7,7 +7,7 @@ import {Badge} from "@/components/ui/badge";
 import {ClientTime} from "@/components/client-time";
 import {STATUS_META} from "@/lib/core/status";
 import type {TimelineItem} from "@/lib/types";
-import {cn} from "@/lib/utils";
+import {cn, toDisplayErrorMessage} from "@/lib/utils";
 
 interface StatusTimelineProps {
   /** 时间线条目列表，通常为最近 60 条按时间倒序的检测结果 */
@@ -178,7 +178,7 @@ export function StatusTimeline({ items, nextRefreshInMs, isMaintenance }: Status
                    
                    {segment.message && (
                      <div className="rounded bg-muted/30 p-2 text-[10px] text-muted-foreground break-words">
-                       {segment.message}
+                       {toDisplayErrorMessage(segment.message) || segment.message}
                      </div>
                    )}
                 </HoverCardContent>

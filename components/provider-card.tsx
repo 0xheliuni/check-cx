@@ -72,14 +72,14 @@ export function ProviderCard({
             <ProviderIcon type={latest.type} size={22} className="text-foreground/80" />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-base font-semibold tracking-tight text-foreground">
-              {latest.name}
+            <h3 className="truncate font-mono text-base font-semibold tracking-tight text-foreground">
+              {latest.model}
             </h3>
             <div className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
               <span className="shrink-0 font-medium text-foreground/70">
                 {PROVIDER_LABEL[latest.type]}
               </span>
-              <span className="truncate font-mono">{latest.model}</span>
+              <span className="truncate">{latest.name}</span>
             </div>
           </div>
           <Badge

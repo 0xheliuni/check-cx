@@ -26,7 +26,7 @@ import { createGoogle } from "@ai-sdk/google";
 
 import type { CheckResult, HealthStatus, ProviderConfig } from "../types";
 import { DEFAULT_ENDPOINTS } from "../types";
-import { getSanitizedErrorDetail } from "../utils";
+import { getErrorMessage, getSanitizedErrorDetail } from "../utils";
 import { generateChallenge, validateResponse } from "./challenge";
 import { measureEndpointPing } from "./endpoint-ping";
 
@@ -376,63 +376,12 @@ function createModel(config: ProviderConfig) {
   }
 }
 
-/* ============================================================================
- * 错误处理
- * ============================================================================ */
-
-/** AI SDK APICallError 类型定义 */
+/** AI SDK APICallError 类型定义（onError 回调与 catch 分支共用） */
 interface AIApiCallError extends Error {
   statusCode?: number;
   responseBody?: string;
-}
-
-/**
- * 判断错误是否为超时错误
- *
- * 超时错误特征：
- * - 错误名称为 "AbortError"（AbortController 触发）
- * - 错误消息包含 "request was aborted" 或 "timeout"
- */
-function isTimeoutError(error: Error & { name?: string }): boolean {
-  if (!error) return false;
-  if (error.name === "AbortError") return true;
-  const message = error.message || "";
-  return /request was aborted|timeout/i.test(message);
-}
-
-/**
- * 从 responseBody 中提取错误消息
- *
- * 尝试解析 SSE 格式的错误响应：data:{"message":"xxx"}
- */
-function extractMessageFromBody(body: string): string | null {
-  const match = body.match(/"message"\s*:\s*"([^"]+)"/);
-  return match?.[1] ?? null;
-}
-
-/**
- * 从错误对象中提取用户友好的错误消息
- *
- * AI SDK 的 APICallError 包含 statusCode、responseBody、message 三个信息源，
- * 按优先级提取最有价值的错误描述
- */
-function getErrorMessage(error: AIApiCallError): string {
-  if (isTimeoutError(error)) return "请求超时";
-
-  // 优先从 responseBody 提取详细信息
-  if (error.responseBody) {
-    const extracted = extractMessageFromBody(error.responseBody);
-    if (extracted) {
-      return error.statusCode ? `[${error.statusCode}] ${extracted}` : extracted;
-    }
-  }
-
-  // 回退到基础 message
-  if (error.message) {
-    return error.statusCode ? `[${error.statusCode}] ${error.message}` : error.message;
-  }
-
-  return "未知错误";
+  lastError?: unknown;
+  errors?: unknown[];
 }
 
 /* ============================================================================
@@ -575,7 +524,7 @@ export async function checkWithAiSdk(config: ProviderConfig): Promise<CheckResul
       params,
       "error",
       null,
-      getErrorMessage(error as AIApiCallError),
+      getErrorMessage(error),
       getSanitizedErrorDetail(error)
     );
   }
