@@ -13,19 +13,30 @@
  *   假代理必须处理整段才能定位答案。
  * - 输出锁死为「一个词」（廉价输出）：诚实模型几乎零输出成本。
  *
- * 每道题带难度档（difficulty）：
+ * 每道题带难度档（difficulty）与题型（category）：
  * - 1 分类选择、2 阅读理解 —— 任何真实 LLM 都能轻松通过，
  *   用于健康检查不会把「活着但较弱」的模型误判为故障。
- * - 更高难度（推理类）留待将来的能力评估功能，本文件暂不实现。
+ * - 3 状态追踪、4 逻辑蕴涵、5 指令遵循 —— 能力评估题，
+ *   答错不影响健康状态，仅记录到 check_challenges 供智力评分。
  */
+
+/** 题型标识，落库 check_challenges.category */
+export type ChallengeCategory =
+  | "category_select"
+  | "reading_comprehension"
+  | "state_tracking"
+  | "logical_implication"
+  | "instruction_following";
 
 export interface Challenge {
   /** 发送给模型的问题 */
   prompt: string;
   /** 期望的正确答案（单个词，归一化后比较） */
   expectedAnswer: string;
-  /** 难度档：1 = 分类选择，2 = 阅读理解 */
-  difficulty: 1 | 2;
+  /** 难度档：1 = 分类选择，2 = 阅读理解，3 = 状态追踪，4 = 逻辑蕴涵，5 = 指令遵循 */
+  difficulty: 1 | 2 | 3 | 4 | 5;
+  /** 题型 */
+  category: ChallengeCategory;
 }
 
 /** 回复中允许的最大 token 数：超过则视为整段回显，判定失败 */
@@ -48,6 +59,31 @@ const COMP_COLORS = ["brown", "gray", "golden", "spotted", "striped", "pale", "d
 const COMP_ANIMALS = ["fox", "owl", "bear", "deer", "frog", "crow", "otter", "lynx"];
 const COMP_ACTIONS = ["slept", "jumped", "rested", "waited", "played", "hid", "stared", "wandered"];
 const COMP_PLACES = ["river", "mountain", "garden", "market", "forest", "lake", "bridge", "castle"];
+
+/** 状态追踪/逻辑题用的人名 */
+const STORY_NAMES = ["Lina", "Marco", "Nina", "Otto", "Sara", "Felix", "Maya", "Hugo"];
+
+/** 逻辑蕴涵题用的编造词：杜绝先验知识，只能靠前件→后件推理 */
+const NONCE_WORDS = [
+  "zorps", "blims", "taks", "mogs", "fends", "quels", "dravs", "wibs",
+];
+
+/** 倒拼题词池：4-7 字母，倒拼后仍是唯一可判答案 */
+const SPELL_WORDS = [
+  "amber", "stone", "cloud", "river", "falcon", "silver", "garden",
+  "planet", "harbor", "meadow", "copper", "velvet",
+];
+
+/** 序数词（与 SPELL_WORDS 采样索引对应） */
+const ORDINALS = ["first", "second", "third", "fourth", "fifth", "sixth"];
+
+/** 数字 ↔ 英文数词等价表（判分时接受任一形式） */
+const NUMBER_WORDS: Record<string, string> = {
+  "1": "one", "2": "two", "3": "three", "4": "four", "5": "five",
+  "6": "six", "7": "seven", "8": "eight", "9": "nine", "10": "ten",
+  "11": "eleven", "12": "twelve", "13": "thirteen", "14": "fourteen", "15": "fifteen",
+  "16": "sixteen", "17": "seventeen", "18": "eighteen", "19": "nineteen", "20": "twenty",
+};
 
 /** 从数组中随机取一个元素 */
 function pick<T>(items: readonly T[]): T {
@@ -73,6 +109,18 @@ function shuffle<T>(items: T[]): T[] {
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
+}
+
+/** 水果词复数化：peach→peaches, cherry→cherries, lemon→lemons */
+function pluralize(word: string): string {
+  if (word.endsWith("ch") || word.endsWith("s")) return `${word}es`;
+  if (word.endsWith("y")) return `${word.slice(0, -1)}ies`;
+  return `${word}s`;
+}
+
+/** 按数量选择单复数 */
+function pluralFor(word: string, count: number): string {
+  return count === 1 ? word : pluralize(word);
 }
 
 /**
@@ -104,7 +152,7 @@ Category: ${targetCategory}
 Options: ${options.join(", ")}
 A:`;
 
-  return { prompt, expectedAnswer: correct, difficulty: 1 };
+  return { prompt, expectedAnswer: correct, difficulty: 1, category: "category_select" };
 }
 
 /**
@@ -145,16 +193,144 @@ Passage: ${passage}
 Question: ${ask.question}
 A:`;
 
-  return { prompt, expectedAnswer: ask.answer, difficulty: 2 };
+  return { prompt, expectedAnswer: ask.answer, difficulty: 2, category: "reading_comprehension" };
+}
+
+/**
+ * 生成难度 3：状态追踪题（语义算术）
+ *
+ * 短故事中某实体的物品数量经过多次增减，问最终数量。
+ * 数字藏在叙事里，代理必须逐句跟踪实体状态——纯模板匹配或本地
+ * 计算无从入手（操作序列与数量每次随机）。答案为数字（1-20）。
+ */
+function generateStateTracking(): Challenge {
+  const owner = pick(STORY_NAMES);
+  const item = pick(CATEGORY_BANK.fruit);
+  const items = pluralize(item);
+  const partner = pick(STORY_NAMES.filter((n) => n !== owner));
+
+  // 初始 3-10 个，随后 2-3 次增减，保证中途与终值都落在 1-20
+  // （0 超出数词等价表范围，>20 徒增计算量）
+  let count = 3 + Math.floor(Math.random() * 8);
+  const sentences = [`${owner} had ${count} ${pluralFor(item, count)}.`];
+  const opCount = 2 + Math.floor(Math.random() * 2);
+  for (let i = 0; i < opCount; i++) {
+    const delta = 1 + Math.floor(Math.random() * 5);
+    const op = pick(["give", "buy", "find"] as const);
+    if (op === "give" && count - delta >= 1) {
+      count -= delta;
+      sentences.push(`${owner} gave ${delta} to ${partner}.`);
+    } else if (op !== "give" && count + delta <= 20) {
+      count += delta;
+      sentences.push(
+        op === "buy"
+          ? `${owner} bought ${delta} more at the market.`
+          : `${owner} found ${delta} near the river.`
+      );
+    } else {
+      // 当前数量不允许所选操作：跳过该步，保持故事合法
+      continue;
+    }
+  }
+
+  const prompt = `Track the quantity step by step, then answer with ONLY the numeral.
+
+Story: Anna had 4 pears. Anna gave 1 to Ben. Anna bought 2 more at the market.
+Question: How many pears does Anna have now?
+A: 5
+
+Story: ${sentences.join(" ")}
+Question: How many ${items} does ${owner} have now?
+A:`;
+
+  return { prompt, expectedAnswer: String(count), difficulty: 3, category: "state_tracking" };
+}
+
+/**
+ * 生成难度 4：逻辑蕴涵题（编造词三段论）
+ *
+ * 用编造词构造前提，杜绝先验知识：只能靠前件→后件的绑定推理。
+ * 四种形式：肯定/否定前件各配 yes/no 答案，外加一条传递链变体。
+ */
+function generateLogicalImplication(): Challenge {
+  const [a, b, c] = sample(NONCE_WORDS, 3);
+  const name = pick(STORY_NAMES);
+  // 词库为复数形式（"All zorps are ..."），主语单数需去词尾 s
+  const singular = (word: string) => word.slice(0, -1);
+
+  const form = pick([
+    {
+      premise: `All ${a} are ${b}. ${name} is a ${singular(a)}.`,
+      question: `Is ${name} a ${singular(b)}?`,
+      answer: "yes",
+    },
+    {
+      premise: `No ${a} are ${b}. ${name} is a ${singular(a)}.`,
+      question: `Is ${name} a ${singular(b)}?`,
+      answer: "no",
+    },
+    {
+      premise: `All ${a} are ${b}. All ${b} are ${c}. ${name} is a ${singular(a)}.`,
+      question: `Is ${name} a ${singular(c)}?`,
+      answer: "yes",
+    },
+    {
+      premise: `All ${a} are ${b}. No ${b} are ${c}. ${name} is a ${singular(a)}.`,
+      question: `Is ${name} a ${singular(c)}?`,
+      answer: "no",
+    },
+  ]);
+
+  const prompt = `Answer the question based ONLY on the given statements. Reply with ONLY yes or no.
+
+Statements: All zorps are blims. Tiko is a zorp.
+Question: Is Tiko a blim?
+A: yes
+
+Statements: ${form.premise}
+Question: ${form.question}
+A:`;
+
+  return { prompt, expectedAnswer: form.answer, difficulty: 4, category: "logical_implication" };
+}
+
+/**
+ * 生成难度 5：指令遵循题（多步变换）
+ *
+ * 「取第 N 个词并倒拼」：需要正确执行两个有序步骤。
+ * 选倒拼而非大小写变换——normalize() 会小写化，大小写无法判分，
+ * 倒拼在归一化后仍唯一可判。
+ */
+function generateInstructionFollowing(): Challenge {
+  const words = sample(SPELL_WORDS, 6);
+  const index = Math.floor(Math.random() * words.length);
+  const target = words[index];
+  const reversed = target.split("").reverse().join("");
+
+  const prompt = `Follow the instruction exactly. Reply with ONLY the final word.
+
+Instruction: Take the second word of "cloud river amber stone pine falcon" and spell it backwards.
+A: revir
+
+Instruction: Take the ${ORDINALS[index]} word of "${words.join(" ")}" and spell it backwards.
+A:`;
+
+  return { prompt, expectedAnswer: reversed, difficulty: 5, category: "instruction_following" };
 }
 
 /**
  * 生成一个随机语言挑战
  *
- * 在难度 1 / 2 间随机选择，二者都是任何真实 LLM 可轻松通过的题型。
+ * 加权抽题：80% 难度 1/2（健康检查语义不变，任何真 LLM 都应通过），
+ * 20% 难度 3/4/5（能力评估采样，答错不计入健康状态）。
  */
 export function generateChallenge(): Challenge {
-  return Math.random() > 0.5 ? generateCategorySelect() : generateReadingComprehension();
+  const roll = Math.random();
+  if (roll < 0.4) return generateCategorySelect();
+  if (roll < 0.8) return generateReadingComprehension();
+  if (roll < 0.88) return generateStateTracking();
+  if (roll < 0.94) return generateLogicalImplication();
+  return generateInstructionFollowing();
 }
 
 /** 验证结果 */
@@ -204,9 +380,15 @@ export function validateResponse(
   const expected = normalize(expectedAnswer);
   const tokens = normalized.split(" ");
 
+  // 数字答案接受英文数词等价形式（如 "6" 与 "six"）
+  const accepted = new Set([expected]);
+  if (/^\d+$/.test(expected) && NUMBER_WORDS[expected]) {
+    accepted.add(NUMBER_WORDS[expected]);
+  }
+
   // 整段回显（如把题面/句子原样返回）token 数会远超答案，直接拒绝
   const withinLength = tokens.length <= MAX_ANSWER_TOKENS;
-  const containsAnswer = tokens.includes(expected);
+  const containsAnswer = tokens.some((token) => accepted.has(token));
 
   // 失败时只展示前若干字符，避免日志过长
   const display = normalized.length > 80 ? `${normalized.slice(0, 80)}…` : normalized;

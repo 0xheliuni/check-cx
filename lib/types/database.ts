@@ -59,6 +59,21 @@ export interface CheckHistoryRow {
 }
 
 /**
+ * check_challenges 表的行类型
+ */
+export interface CheckChallengeRow {
+  id: string;
+  config_id: string;
+  difficulty: number;
+  category: string;
+  expected_answer: string;
+  response_excerpt: string | null;
+  passed: boolean;
+  latency_ms: number | null;
+  checked_at: string;
+}
+
+/**
  * availability_stats 视图的行类型
  */
 export interface AvailabilityStats {

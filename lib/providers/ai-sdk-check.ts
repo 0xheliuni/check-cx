@@ -24,7 +24,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createGoogle } from "@ai-sdk/google";
 
-import type { CheckResult, HealthStatus, ProviderConfig } from "../types";
+import type { ChallengeOutcome, CheckResult, HealthStatus, ProviderConfig } from "../types";
 import { DEFAULT_ENDPOINTS } from "../types";
 import { getErrorMessage, getSanitizedErrorDetail } from "../utils";
 import { generateChallenge, validateResponse } from "./challenge";
@@ -405,7 +405,8 @@ function buildCheckResult(
   status: HealthStatus | "validation_failed" | "failed" | "error",
   latencyMs: number | null,
   message: string,
-  logMessage?: string
+  logMessage?: string,
+  challengeOutcome?: ChallengeOutcome
 ): CheckResult {
   return {
     id: params.config.id,
@@ -419,6 +420,7 @@ function buildCheckResult(
     checkedAt: new Date().toISOString(),
     message,
     ...(logMessage ? { logMessage } : {}),
+    ...(challengeOutcome ? { challenge: challengeOutcome } : {}),
     groupName: params.config.groupName || null,
   };
 }
@@ -431,7 +433,7 @@ function buildCheckResult(
  * 统一的 AI Provider 健康检查函数
  *
  * 执行流程：
- * 1. 生成随机数学挑战（防止假站点用固定回复绕过）
+ * 1. 生成随机语言挑战（防止假站点用固定回复绕过）
  * 2. 使用流式 API 发送请求，收集完整响应
  * 3. 验证响应中是否包含正确答案
  * 4. 根据延迟和验证结果判定健康状态
@@ -439,9 +441,11 @@ function buildCheckResult(
  * 状态判定规则：
  * - operational：请求成功、验证通过、延迟 ≤ 6000ms
  * - degraded：请求成功、验证通过、延迟 > 6000ms
- * - validation_failed：收到回复但答案验证失败
+ * - validation_failed：收到回复但难度 1/2 题答案验证失败
  * - failed：请求失败、超时或回复为空
  * - error：请求过程中发生异常
+ *
+ * 难度 3-5 的能力评估题答错不影响健康状态，仅记录到 check_challenges。
  */
 export async function checkWithAiSdk(config: ProviderConfig): Promise<CheckResult> {
   const startedAt = Date.now();
@@ -503,21 +507,37 @@ export async function checkWithAiSdk(config: ProviderConfig): Promise<CheckResul
     // 验证答案
     const { valid, normalized } = validateResponse(collectedResponse, challenge.expectedAnswer);
 
-    if (!valid) {
+    const challengeOutcome: ChallengeOutcome = {
+      difficulty: challenge.difficulty,
+      category: challenge.category,
+      expectedAnswer: challenge.expectedAnswer,
+      responseExcerpt: normalized,
+      passed: valid,
+    };
+
+    // 难度 1/2 答错视为故障（任何真 LLM 都应通过）；
+    // 难度 3-5 答错仅记录能力评估，不影响健康状态，避免弱模型健康抖动
+    if (!valid && challenge.difficulty <= 2) {
       const actual = normalized || "(空)";
       return buildCheckResult(
         params,
         "validation_failed",
         latencyMs,
-        `回复验证失败: 期望 "${challenge.expectedAnswer}", 实际: "${actual}"`
+        `回复验证失败: 期望 "${challenge.expectedAnswer}", 实际: "${actual}"`,
+        undefined,
+        challengeOutcome
       );
     }
 
     // 判定健康状态
     const status: HealthStatus = latencyMs <= DEGRADED_THRESHOLD_MS ? "operational" : "degraded";
-    const message = status === "degraded" ? `响应成功但耗时 ${latencyMs}ms` : `验证通过 (${latencyMs}ms)`;
+    const message = !valid
+      ? `高难度题验证未通过（不计入健康状态）: 期望 "${challenge.expectedAnswer}" (${latencyMs}ms)`
+      : status === "degraded"
+        ? `响应成功但耗时 ${latencyMs}ms`
+        : `验证通过 (${latencyMs}ms)`;
 
-    return buildCheckResult(params, status, latencyMs, message);
+    return buildCheckResult(params, status, latencyMs, message, undefined, challengeOutcome);
   } catch (error) {
     const params = await buildParams();
     return buildCheckResult(

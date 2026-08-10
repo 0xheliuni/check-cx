@@ -78,6 +78,23 @@ CREATE TABLE dev.check_history (
     CONSTRAINT fk_config FOREIGN KEY (config_id) REFERENCES dev.check_configs(id) ON DELETE CASCADE
 );
 
+-- 挑战记录表
+CREATE TABLE dev.check_challenges (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    config_id uuid NOT NULL,
+    difficulty smallint NOT NULL,
+    category text NOT NULL,
+    expected_answer text NOT NULL,
+    response_excerpt text,
+    passed boolean NOT NULL,
+    latency_ms integer,
+    checked_at timestamp with time zone NOT NULL DEFAULT now(),
+    CONSTRAINT check_challenges_difficulty_valid CHECK (((difficulty >= 1) AND (difficulty <= 5))),
+    CONSTRAINT fk_config FOREIGN KEY (config_id) REFERENCES dev.check_configs(id) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE dev.check_challenges IS '模型能力评估挑战记录（难度 1/2 同时用于健康判定，3-5 仅用于能力评估）';
+
 -- 分组信息表
 CREATE TABLE dev.group_info (
     id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -154,6 +171,9 @@ FOR SELECT USING (true);
 -- Enable RLS on check_poller_leases (service role only)
 ALTER TABLE dev.check_poller_leases ENABLE ROW LEVEL SECURITY;
 
+-- Enable RLS on check_challenges (service role only)
+ALTER TABLE dev.check_challenges ENABLE ROW LEVEL SECURITY;
+
 -- 序列属主
 ALTER SEQUENCE dev.check_history_id_seq
     OWNED BY dev.check_history.id;
@@ -180,6 +200,9 @@ CREATE INDEX idx_dev_check_history_config_id
 
 CREATE INDEX idx_dev_history_config_checked
     ON dev.check_history USING btree (config_id, checked_at DESC);
+
+CREATE INDEX idx_dev_challenges_config_checked
+    ON dev.check_challenges USING btree (config_id, checked_at DESC);
 
 -- 可用性统计视图
 CREATE OR REPLACE VIEW dev.availability_stats AS
@@ -215,6 +238,51 @@ SELECT
     ROUND(100.0 * COUNT(*) FILTER (WHERE status IN ('operational', 'degraded')) / NULLIF(COUNT(*), 0), 2) AS availability_pct
 FROM dev.check_history
 WHERE checked_at > NOW() - INTERVAL '30 days'
+GROUP BY config_id;
+
+-- 智力统计视图：近 30 天按难度档通过率 + 加权总分
+CREATE OR REPLACE VIEW dev.intelligence_stats AS
+WITH agg AS (
+    SELECT
+        config_id,
+        difficulty,
+        COUNT(*) AS samples,
+        COUNT(*) FILTER (WHERE passed) AS passed_count
+    FROM dev.check_challenges
+    WHERE checked_at > NOW() - INTERVAL '30 days'
+    GROUP BY config_id, difficulty
+),
+scored AS (
+    SELECT
+        config_id,
+        difficulty,
+        samples,
+        passed_count,
+        CASE WHEN samples >= 5
+             THEN ROUND(100.0 * passed_count / samples, 2)
+        END AS pass_rate,
+        CASE difficulty
+            WHEN 1 THEN 1
+            WHEN 2 THEN 2
+            WHEN 3 THEN 4
+            WHEN 4 THEN 8
+            WHEN 5 THEN 16
+        END AS weight
+    FROM agg
+)
+SELECT
+    config_id,
+    SUM(samples) AS total_samples,
+    MAX(pass_rate) FILTER (WHERE difficulty = 1) AS d1_pass_rate,
+    MAX(pass_rate) FILTER (WHERE difficulty = 2) AS d2_pass_rate,
+    MAX(pass_rate) FILTER (WHERE difficulty = 3) AS d3_pass_rate,
+    MAX(pass_rate) FILTER (WHERE difficulty = 4) AS d4_pass_rate,
+    MAX(pass_rate) FILTER (WHERE difficulty = 5) AS d5_pass_rate,
+    ROUND(100.0 *
+          SUM(CASE WHEN samples >= 5 THEN weight * passed_count ELSE 0 END)
+        / NULLIF(SUM(CASE WHEN samples >= 5 THEN weight * samples ELSE 0 END), 0), 2
+    ) AS total_score
+FROM scored
 GROUP BY config_id;
 
 -- 自动更新时间的触发函数
@@ -432,7 +500,7 @@ AS $$
   ORDER BY c.name ASC, r.checked_at DESC;
 $$;
 
--- RPC: 裁剪历史记录
+-- RPC: 裁剪历史记录与挑战记录
 -- 先删除旧版本函数（单参数版本），避免函数重载冲突
 DROP FUNCTION IF EXISTS dev.prune_check_history(integer);
 
@@ -447,6 +515,7 @@ AS $$
 DECLARE
   effective_days integer;
   deleted_count integer;
+  challenge_deleted integer;
 BEGIN
   effective_days := LEAST(365, GREATEST(7, COALESCE(retention_days, limit_per_config, 30)));
 
@@ -454,7 +523,12 @@ BEGIN
   WHERE checked_at < NOW() - (effective_days || ' days')::interval;
 
   GET DIAGNOSTICS deleted_count = ROW_COUNT;
-  RETURN deleted_count;
+
+  DELETE FROM dev.check_challenges
+  WHERE checked_at < NOW() - (effective_days || ' days')::interval;
+
+  GET DIAGNOSTICS challenge_deleted = ROW_COUNT;
+  RETURN deleted_count + challenge_deleted;
 END;
 $$;
 

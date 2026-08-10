@@ -118,6 +118,28 @@ class SnapshotStore {
       return;
     }
 
+    // 顺带写入挑战记录（能力评估数据）；基础设施失败的结果没有 challenge 字段，自然被过滤
+    const challengeRecords = results
+      .filter((result) => result.challenge)
+      .map((result) => ({
+        config_id: result.id,
+        difficulty: result.challenge!.difficulty,
+        category: result.challenge!.category,
+        expected_answer: result.challenge!.expectedAnswer,
+        response_excerpt: result.challenge!.responseExcerpt,
+        passed: result.challenge!.passed,
+        latency_ms: result.latencyMs,
+        checked_at: result.checkedAt,
+      }));
+    if (challengeRecords.length > 0) {
+      const { error: challengeError } = await supabase
+        .from("check_challenges")
+        .insert(challengeRecords);
+      if (challengeError) {
+        logError("写入挑战记录失败", challengeError);
+      }
+    }
+
     const now = Date.now();
     if (now - this.lastAutoPruneAt >= AUTO_PRUNE_INTERVAL_MS) {
       this.lastAutoPruneAt = now;
@@ -336,6 +358,15 @@ async function fallbackPruneHistory(
 
     if (deleteError) {
       logError("fallback 模式下删除历史失败", deleteError);
+    }
+
+    const { error: deleteChallengeError } = await supabase
+      .from("check_challenges")
+      .delete()
+      .lt("checked_at", cutoff);
+
+    if (deleteChallengeError) {
+      logError("fallback 模式下删除挑战记录失败", deleteChallengeError);
     }
   } catch (error) {
     logError("fallback 模式下清理历史异常", error);
