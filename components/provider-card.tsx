@@ -1,6 +1,6 @@
 "use client";
 
-import {AlertTriangle, Radio, Zap} from "lucide-react";
+import {AlertTriangle, PauseCircle, Radio, Zap} from "lucide-react";
 
 import {ProviderIcon} from "@/components/provider-icon";
 import {StatusTimeline} from "@/components/status-timeline";
@@ -37,7 +37,7 @@ export function ProviderCard({
 
   return (
     <div className={cn(
-      "flex flex-col overflow-hidden rounded-xl border bg-card transition-colors hover:border-foreground/20",
+      "relative flex flex-col overflow-hidden rounded-xl border bg-card transition-colors hover:border-foreground/20",
       banner && banner.bannerBorder
     )}>
       {banner && officialStatus && (
@@ -122,6 +122,18 @@ export function ProviderCard({
       <div className="border-t px-4 py-3 sm:px-5">
         <StatusTimeline items={items} nextRefreshInMs={timeToNextRefresh} isMaintenance={isMaintenance} />
       </div>
+
+      {isMaintenance && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-card/85 px-6 text-center backdrop-blur-sm">
+          <PauseCircle className="h-8 w-8 text-blue-500" />
+          <p className="text-sm font-semibold text-foreground">
+            我们暂停对此模型探测
+          </p>
+          <p className="text-xs text-muted-foreground">
+            仅停止健康检查，不代表模型不可用
+          </p>
+        </div>
+      )}
     </div>
   );
 }
