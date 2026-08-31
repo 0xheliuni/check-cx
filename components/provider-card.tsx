@@ -59,6 +59,10 @@ function IntelligenceTag({ intelligence }: { intelligence: IntelligenceStat }) {
               </span>
             </div>
           ))}
+          <div className="flex items-center justify-between border-t border-border/50 pt-1.5">
+            <span className="text-muted-foreground">样本数</span>
+            <span className="font-mono font-medium">{intelligence.totalSamples}</span>
+          </div>
         </div>
       </HoverCardContent>
     </HoverCard>
