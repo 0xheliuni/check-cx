@@ -26,6 +26,8 @@ export type {
   AvailabilityPeriod,
   AvailabilityStat,
   AvailabilityStatsMap,
+  IntelligenceStat,
+  IntelligenceStatsMap,
   RefreshMode,
   PingCacheEntry,
   HistorySnapshot,

@@ -8,10 +8,11 @@
 import {loadProviderConfigsFromDB} from "../database/config-loader";
 import {getGroupInfo} from "../database/group-info";
 import {getAvailabilityStats} from "../database/availability";
+import {getIntelligenceStats} from "../database/intelligence";
 import {getPollingIntervalLabel, getPollingIntervalMs} from "./polling-config";
 import {ensureOfficialStatusPoller} from "./official-status-poller";
 import {buildProviderTimelines, loadSnapshotForScope} from "./health-snapshot-service";
-import type {AvailabilityPeriod, AvailabilityStatsMap, ProviderTimeline, RefreshMode} from "../types";
+import type {AvailabilityPeriod, AvailabilityStatsMap, IntelligenceStatsMap, ProviderTimeline, RefreshMode} from "../types";
 import {UNGROUPED_DISPLAY_NAME, UNGROUPED_KEY} from "../types";
 
 interface GroupDashboardCacheEntry {
@@ -52,6 +53,7 @@ export interface GroupDashboardData {
   pollIntervalLabel: string;
   pollIntervalMs: number;
   availabilityStats: AvailabilityStatsMap;
+  intelligenceStats: IntelligenceStatsMap;
   trendPeriod: AvailabilityPeriod;
   generatedAt: number;
   websiteUrl?: string | null;
@@ -132,9 +134,9 @@ export async function loadGroupDashboardData(
   const shouldBypassCache = refreshMode === "always";
 
   const loadData = async (): Promise<GroupDashboardData | null> => {
-    // history / availabilityStats / groupInfo 互不依赖，并行拉取
+    // history / availabilityStats / intelligenceStats / groupInfo 互不依赖，并行拉取
     const configIds = groupConfigs.map((config) => config.id);
-    const [history, availabilityStats, groupInfo] = await Promise.all([
+    const [history, availabilityStats, intelligenceStats, groupInfo] = await Promise.all([
       loadSnapshotForScope(
         {
           cacheKey,
@@ -145,6 +147,7 @@ export async function loadGroupDashboardData(
         refreshMode
       ),
       getAvailabilityStats(configIds),
+      getIntelligenceStats(configIds),
       isTargetUngrouped ? Promise.resolve(null) : getGroupInfo(targetGroupName),
     ]);
 
@@ -176,6 +179,7 @@ export async function loadGroupDashboardData(
       pollIntervalLabel,
       pollIntervalMs,
       availabilityStats,
+      intelligenceStats,
       trendPeriod,
       generatedAt,
       websiteUrl,

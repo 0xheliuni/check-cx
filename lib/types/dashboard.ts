@@ -15,6 +15,18 @@ export interface AvailabilityStat {
 
 export type AvailabilityStatsMap = Record<string, AvailabilityStat[]>;
 
+export interface IntelligenceStat {
+  totalSamples: number;
+  d1PassRate: number | null;
+  d2PassRate: number | null;
+  d3PassRate: number | null;
+  d4PassRate: number | null;
+  d5PassRate: number | null;
+  totalScore: number | null;
+}
+
+export type IntelligenceStatsMap = Record<string, IntelligenceStat>;
+
 export interface GroupInfoSummary {
   groupName: string;
   websiteUrl?: string | null;
@@ -57,6 +69,7 @@ export interface DashboardData {
   pollIntervalLabel: string;
   pollIntervalMs: number;
   availabilityStats?: AvailabilityStatsMap;
+  intelligenceStats?: IntelligenceStatsMap;
   trendPeriod: AvailabilityPeriod;
   /**
    * 服务端生成该数据的时间戳（ms）

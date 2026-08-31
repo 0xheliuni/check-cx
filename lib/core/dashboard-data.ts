@@ -9,6 +9,7 @@
 import {loadProviderConfigsFromDB} from "../database/config-loader";
 import {loadGroupInfos} from "../database/group-info";
 import {getAvailabilityStats} from "../database/availability";
+import {getIntelligenceStats} from "../database/intelligence";
 import {getPollingIntervalLabel, getPollingIntervalMs} from "./polling-config";
 import {ensureOfficialStatusPoller} from "./official-status-poller";
 import {buildProviderTimelines, loadSnapshotForScope} from "./health-snapshot-service";
@@ -131,9 +132,9 @@ async function loadDashboardDataInternal(options?: {
   const shouldBypassCache = refreshMode === "always";
 
   const loadData = async (): Promise<DashboardLoadResult> => {
-    // history / groupInfos / availabilityStats 互不依赖，并行拉取
+    // history / groupInfos / availabilityStats / intelligenceStats 互不依赖，并行拉取
     const configIds = allConfigs.map((config) => config.id);
-    const [history, groupInfos, availabilityStats] = await Promise.all([
+    const [history, groupInfos, availabilityStats, intelligenceStats] = await Promise.all([
       loadSnapshotForScope(
         {
           cacheKey,
@@ -145,6 +146,7 @@ async function loadDashboardDataInternal(options?: {
       ),
       loadGroupInfos(),
       getAvailabilityStats(configIds),
+      getIntelligenceStats(configIds),
     ]);
 
     const providerTimelines = buildProviderTimelines(history, maintenanceConfigs);
@@ -174,6 +176,7 @@ async function loadDashboardDataInternal(options?: {
       pollIntervalLabel,
       pollIntervalMs,
       availabilityStats,
+      intelligenceStats,
       trendPeriod,
       generatedAt,
     };

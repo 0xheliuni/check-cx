@@ -6,7 +6,8 @@ import {ProviderIcon} from "@/components/provider-icon";
 import {StatusTimeline} from "@/components/status-timeline";
 import {AvailabilityStats} from "@/components/availability-stats";
 import {Badge} from "@/components/ui/badge";
-import type {AvailabilityPeriod, AvailabilityStat, ProviderTimeline} from "@/lib/types";
+import {HoverCard, HoverCardContent, HoverCardTrigger} from "@/components/ui/hover-card";
+import type {AvailabilityPeriod, AvailabilityStat, IntelligenceStat, ProviderTimeline} from "@/lib/types";
 import {OFFICIAL_STATUS_META, PROVIDER_LABEL, STATUS_META} from "@/lib/core/status";
 import {cn} from "@/lib/utils";
 
@@ -14,16 +15,61 @@ interface ProviderCardProps {
   timeline: ProviderTimeline;
   timeToNextRefresh: number | null;
   availabilityStats?: AvailabilityStat[] | null;
+  intelligence?: IntelligenceStat | null;
   selectedPeriod: AvailabilityPeriod;
 }
 
 const formatLatency = (value: number | null | undefined) =>
   typeof value === "number" ? `${value} ms` : "—";
 
+const formatRate = (value: number | null | undefined) =>
+  typeof value === "number" ? `${value}%` : "—";
+
+const INTELLIGENCE_DIMENSIONS: Array<{ key: keyof IntelligenceStat; label: string }> = [
+  { key: "d1PassRate", label: "D1" },
+  { key: "d2PassRate", label: "D2" },
+  { key: "d3PassRate", label: "D3" },
+  { key: "d4PassRate", label: "D4" },
+  { key: "d5PassRate", label: "D5" },
+];
+
+/** 智能评估得分 Tag：悬停展示各难度档通过率 */
+function IntelligenceTag({ intelligence }: { intelligence: IntelligenceStat }) {
+  if (intelligence.totalScore === null) {
+    return null;
+  }
+  const score = intelligence.totalScore;
+  const variant =
+    score >= 80 ? "default" : score >= 50 ? "secondary" : "destructive";
+
+  return (
+    <HoverCard openDelay={100}>
+      <HoverCardTrigger asChild>
+        <Badge variant={variant} className="shrink-0 cursor-default">
+          {score}
+        </Badge>
+      </HoverCardTrigger>
+      <HoverCardContent side="top" className="w-40 rounded-xl p-3">
+        <div className="grid gap-1.5 text-xs">
+          {INTELLIGENCE_DIMENSIONS.map((dim) => (
+            <div key={dim.key} className="flex items-center justify-between">
+              <span className="text-muted-foreground">{dim.label}</span>
+              <span className="font-mono font-medium">
+                {formatRate(intelligence[dim.key] as number | null)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
+
 export function ProviderCard({
   timeline,
   timeToNextRefresh,
   availabilityStats,
+  intelligence,
   selectedPeriod,
 }: ProviderCardProps) {
   const { latest, items } = timeline;
@@ -72,9 +118,12 @@ export function ProviderCard({
             <ProviderIcon type={latest.type} size={22} className="text-foreground/80" />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="truncate font-mono text-base font-semibold tracking-tight text-foreground">
-              {latest.model}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="truncate font-mono text-base font-semibold tracking-tight text-foreground">
+                {latest.model}
+              </h3>
+              {intelligence && <IntelligenceTag intelligence={intelligence} />}
+            </div>
             <div className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
               <span className="shrink-0 font-medium text-foreground/70">
                 {PROVIDER_LABEL[latest.type]}

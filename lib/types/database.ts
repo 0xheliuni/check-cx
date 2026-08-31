@@ -85,6 +85,20 @@ export interface AvailabilityStats {
 }
 
 /**
+ * intelligence_stats 视图的行类型
+ */
+export interface IntelligenceStats {
+  config_id: string;
+  total_samples: number;
+  d1_pass_rate: number | null;
+  d2_pass_rate: number | null;
+  d3_pass_rate: number | null;
+  d4_pass_rate: number | null;
+  d5_pass_rate: number | null;
+  total_score: number | null;
+}
+
+/**
  * group_info 表的行类型
  */
 export interface GroupInfoRow {

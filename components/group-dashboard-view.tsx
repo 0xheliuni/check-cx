@@ -158,7 +158,7 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
   }, [data.pollIntervalMs, latestCheckTimestamp]);
 
   const { providerTimelines, total, lastUpdated, pollIntervalLabel, displayName } = data;
-  const { availabilityStats } = data;
+  const { availabilityStats, intelligenceStats } = data;
 
   // 根据卡片数量决定宽屏列数
   const gridColsClass = useMemo(() => {
@@ -267,6 +267,7 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
               timeline={timeline}
               timeToNextRefresh={timeToNextRefresh}
               availabilityStats={availabilityStats[timeline.id]}
+              intelligence={intelligenceStats[timeline.id] ?? null}
               selectedPeriod={selectedPeriod}
             />
           ))}

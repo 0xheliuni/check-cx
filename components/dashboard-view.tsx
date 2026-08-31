@@ -46,6 +46,7 @@ import type {
   DashboardData,
   GroupedProviderTimelines,
   GroupInfoSummary,
+  IntelligenceStatsMap,
 } from "@/lib/types";
 import { UNGROUPED_DISPLAY_NAME } from "@/lib/types";
 import {STATUS_META} from "@/lib/core/status";
@@ -158,6 +159,7 @@ interface GroupPanelProps {
   timeToNextRefresh: number | null;
   gridColsClass: string;
   availabilityStats: AvailabilityStatsMap;
+  intelligenceStats: IntelligenceStatsMap;
   selectedPeriod: AvailabilityPeriod;
   defaultOpen?: boolean;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
@@ -193,6 +195,7 @@ function GroupPanel({
   timeToNextRefresh,
   gridColsClass,
   availabilityStats,
+  intelligenceStats,
   selectedPeriod,
   defaultOpen = false,
   dragHandleProps,
@@ -265,6 +268,7 @@ function GroupPanel({
               timeline={timeline}
               timeToNextRefresh={timeToNextRefresh}
               availabilityStats={availabilityStats[timeline.id]}
+              intelligence={intelligenceStats[timeline.id] ?? null}
               selectedPeriod={selectedPeriod}
             />
           ))}
@@ -299,6 +303,7 @@ export function DashboardView({ initialData }: DashboardViewProps) {
   
   const { providerTimelines, total, lastUpdated, pollIntervalLabel } = data;
   const availabilityStats: AvailabilityStatsMap = data.availabilityStats ?? {};
+  const intelligenceStats: IntelligenceStatsMap = data.intelligenceStats ?? {};
   const [selectedPeriod, setSelectedPeriod] = useState<AvailabilityPeriod>(
     data.trendPeriod ?? "7d"
   );
@@ -673,6 +678,7 @@ export function DashboardView({ initialData }: DashboardViewProps) {
           timeToNextRefresh,
           gridColsClass,
           availabilityStats,
+          intelligenceStats,
           selectedPeriod,
           defaultOpen: false,
         };
@@ -891,6 +897,7 @@ export function DashboardView({ initialData }: DashboardViewProps) {
                 timeline={timeline}
                 timeToNextRefresh={timeToNextRefresh}
                 availabilityStats={availabilityStats[timeline.id]}
+                intelligence={intelligenceStats[timeline.id] ?? null}
                 selectedPeriod={selectedPeriod}
               />
             ))}
