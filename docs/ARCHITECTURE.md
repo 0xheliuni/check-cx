@@ -84,6 +84,7 @@ check_request_templates + check_models + check_configs → 轮询器 → check_h
 
 - **Dashboard / 分组 / 通知读路径**：源站每次请求查库（只合并并发 inflight），不走长 TTL / CDN。
 - **前端 SWR**：`frontend-cache.ts` 把快照写入内存和 sessionStorage。刷新先画出缓存，后台查库，有变更再替换。
+- **Admin 即时同步**：`check_configs` 的启用/维护变更会 bump `check_data_revision`。打开的面板通过同源 SSE `/api/live` 收到信号后立刻重拉仪表盘（浏览器不连 Supabase WebSocket）。
 - **官方状态缓存**：`official-status-poller.ts` 使用内存 `Map` 缓存结果。
 - **对外状态 API**：`/api/v1/status` 仍使用短 TTL 内存缓存，避免外部轮询打满数据库。
 

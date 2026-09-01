@@ -265,6 +265,18 @@ function revalidateInBackground(
   pendingRequests.set(key, request);
 }
 
+export async function reloadGroupSnapshot(
+  groupName: string,
+  trendPeriod: AvailabilityPeriod,
+  onUpdate?: (data: GroupDashboardData) => void
+): Promise<void> {
+  const { data, etag } = await fetchFromNetwork(groupName, trendPeriod);
+  if (data) {
+    setGroupCache(groupName, trendPeriod, data, etag);
+    onUpdate?.(data);
+  }
+}
+
 export interface FetchGroupWithCacheOptions {
   groupName: string;
   trendPeriod: AvailabilityPeriod;

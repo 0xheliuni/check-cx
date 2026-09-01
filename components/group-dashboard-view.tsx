@@ -7,7 +7,8 @@ import {GroupTags} from "@/components/group-tags";
 import {ProviderCard} from "@/components/provider-card";
 import {StatusSummary} from "@/components/status-summary";
 import {ClientTime} from "@/components/client-time";
-import {fetchGroupWithCache, prefetchGroupData, setGroupCache} from "@/lib/core/group-frontend-cache";
+import {fetchGroupWithCache, prefetchGroupData, reloadGroupSnapshot, setGroupCache} from "@/lib/core/group-frontend-cache";
+import {useConfigLiveReload} from "@/lib/core/use-config-live-reload";
 import type {AvailabilityPeriod, ProviderTimeline} from "@/lib/types";
 import type {GroupDashboardData} from "@/lib/core/group-data";
 import {cn} from "@/lib/utils";
@@ -97,6 +98,17 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
       lockRef.current = false;
     }
   }, [groupName, selectedPeriod]);
+
+  const reloadFromAdminChange = useCallback(() => {
+    reloadGroupSnapshot(groupName, selectedPeriod, (nextData) => {
+      setData((current) =>
+        nextData.generatedAt >= current.generatedAt ? nextData : current
+      );
+    }).catch((error) => {
+      console.error("[check-cx] 分组配置变更后刷新失败", error);
+    });
+  }, [groupName, selectedPeriod]);
+  useConfigLiveReload(reloadFromAdminChange);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {

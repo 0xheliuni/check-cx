@@ -1,8 +1,9 @@
 "use client";
 
 import {useCallback, useEffect, useMemo, useState, useSyncExternalStore} from "react";
-import {fetchWithCache, prefetchDashboardData, setCache} from "@/lib/core/frontend-cache";
+import {fetchWithCache, prefetchDashboardData, reloadDashboardSnapshot, setCache} from "@/lib/core/frontend-cache";
 import {prefetchGroupData} from "@/lib/core/group-frontend-cache";
+import {useConfigLiveReload} from "@/lib/core/use-config-live-reload";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -466,6 +467,17 @@ export function DashboardView({ initialData }: DashboardViewProps) {
       setIsRefreshing(false);
     }
   }, [selectedPeriod]);
+
+  const reloadFromAdminChange = useCallback(() => {
+    reloadDashboardSnapshot(selectedPeriod, (nextData) => {
+      setData((current) =>
+        nextData.generatedAt >= current.generatedAt ? nextData : current
+      );
+    }).catch((error) => {
+      console.error("[check-cx] 配置变更后刷新失败", error);
+    });
+  }, [selectedPeriod]);
+  useConfigLiveReload(reloadFromAdminChange);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {

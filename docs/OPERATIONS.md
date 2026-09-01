@@ -39,6 +39,7 @@
 
 - 执行 `supabase/migrations/` 下的迁移（按时间顺序）。
 - 如使用 dev schema，需同步执行 `*_dev.sql` 迁移。
+- Admin 禁用/维护后面板即时更新依赖 `20260901140000_add_check_data_revision.sql`（dev 用对应 `_dev.sql`）。未执行时面板仍可刷新查看，只是不会自动推送。
 
 ### 3.2.1 模型拆分迁移后的自检 SQL
 

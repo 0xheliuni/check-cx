@@ -62,6 +62,17 @@ CREATE TABLE dev.check_configs (
     CONSTRAINT check_configs_model_id_fkey FOREIGN KEY (model_id) REFERENCES dev.check_models(id) ON DELETE RESTRICT
 );
 
+CREATE TABLE dev.check_data_revision (
+    id smallint PRIMARY KEY CHECK (id = 1),
+    bumped_at timestamptz NOT NULL DEFAULT now()
+);
+
+COMMENT ON TABLE dev.check_data_revision IS '配置变更版本戳，供 check-cx 检测 Admin 禁用/维护等更新';
+
+INSERT INTO dev.check_data_revision (id, bumped_at)
+VALUES (1, now())
+ON CONFLICT (id) DO NOTHING;
+
 -- 历史记录表
 CREATE TABLE dev.check_history (
     id bigint NOT NULL DEFAULT nextval('dev.check_history_id_seq'::regclass),
@@ -150,6 +161,8 @@ COMMENT ON TABLE dev.check_poller_leases IS '轮询主节点租约表（单行�
 INSERT INTO dev.check_poller_leases (lease_key, leader_id, lease_expires_at)
 VALUES ('poller', NULL, to_timestamp(0))
 ON CONFLICT (lease_key) DO NOTHING;
+
+ALTER TABLE dev.check_data_revision ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE dev.check_history ENABLE ROW LEVEL SECURITY;
 
@@ -392,6 +405,25 @@ CREATE TRIGGER update_admin_users_updated_at
 BEFORE UPDATE ON dev.admin_users
 FOR EACH ROW
 EXECUTE FUNCTION dev.update_updated_at_column();
+
+CREATE OR REPLACE FUNCTION dev.bump_check_data_revision()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  INSERT INTO dev.check_data_revision (id, bumped_at)
+  VALUES (1, now())
+  ON CONFLICT (id) DO UPDATE
+    SET bumped_at = now();
+  RETURN NULL;
+END;
+$$;
+
+CREATE TRIGGER check_configs_bump_data_revision
+AFTER INSERT OR DELETE OR UPDATE OF enabled, is_maintenance
+ON dev.check_configs
+FOR EACH ROW
+EXECUTE FUNCTION dev.bump_check_data_revision();
 
 -- 表与列注释
 COMMENT ON TABLE dev.check_configs IS 'AI 服务商配置表 - 存储各个 AI 服务商的 API 配置信息';

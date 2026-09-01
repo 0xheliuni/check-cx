@@ -284,6 +284,18 @@ function revalidateInBackground(
   pendingRequests.set(key, request);
 }
 
+/** Admin 禁用/维护后立刻重拉，不带 ETag，避免 304 挡住新配置 */
+export async function reloadDashboardSnapshot(
+  trendPeriod: AvailabilityPeriod,
+  onUpdate?: (data: DashboardData) => void
+): Promise<void> {
+  const { data, etag } = await fetchFromNetwork(trendPeriod, undefined, false);
+  if (data) {
+    setCache(trendPeriod, data, etag);
+    onUpdate?.(data);
+  }
+}
+
 export interface FetchWithCacheOptions {
   trendPeriod: AvailabilityPeriod;
   forceFresh?: boolean;
