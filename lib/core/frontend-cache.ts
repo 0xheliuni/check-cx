@@ -1,10 +1,8 @@
 /**
- * 前端内存缓存模块
+ * 前端缓存模块
  *
- * 实现 SWR (Stale-While-Revalidate) 模式：
- * - 缓存有效：立即返回，不发请求
- * - 缓存过期：立即返回旧数据，后台刷新
- * - 无缓存：等待请求完成
+ * SWR：有快照就立刻画出，同时后台查库；有变更再替换。
+ * sessionStorage 让整页刷新也能吃上缓存。
  */
 
 import type { DashboardData, AvailabilityPeriod } from "../types";
@@ -23,6 +21,38 @@ interface CacheEntry {
 /** 缓存键生成 */
 function getCacheKey(trendPeriod: AvailabilityPeriod): string {
   return `dashboard:${trendPeriod}`;
+}
+
+const STORAGE_PREFIX = "check-cx:dashboard:";
+
+function readPersisted(key: string): CacheEntry | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  try {
+    const raw = window.sessionStorage.getItem(STORAGE_PREFIX + key);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as CacheEntry;
+    if (!parsed?.data) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writePersisted(key: string, entry: CacheEntry): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  try {
+    window.sessionStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(entry));
+  } catch {
+    // 配额满时忽略，内存缓存仍可用
+  }
 }
 
 interface FrontendCacheMetrics {
@@ -84,11 +114,19 @@ function isFresh(entry: CacheEntry): boolean {
   return !isExpired(entry);
 }
 
-/** 获取缓存 */
+/** 获取缓存（内存优先，其次 sessionStorage） */
 export function getCache(trendPeriod: AvailabilityPeriod): CacheEntry | null {
   const key = getCacheKey(trendPeriod);
   const entry = cache.get(key);
-  return entry ?? null;
+  if (entry) {
+    return entry;
+  }
+  const persisted = readPersisted(key);
+  if (persisted) {
+    cache.set(key, persisted);
+    return persisted;
+  }
+  return null;
 }
 
 /** 设置缓存 */
@@ -102,12 +140,14 @@ export function setCache(
     Number.isFinite(data.pollIntervalMs) && data.pollIntervalMs > 0
       ? data.pollIntervalMs
       : DEFAULT_CACHE_TTL_MS;
-  cache.set(key, {
+  const entry: CacheEntry = {
     data,
     timestamp: Date.now(),
     etag,
     ttlMs,
-  });
+  };
+  cache.set(key, entry);
+  writePersisted(key, entry);
 }
 
 /** 更新缓存时间戳（用于 304 响应） */
@@ -173,24 +213,21 @@ export async function prefetchDashboardData(
 async function fetchFromNetwork(
   trendPeriod: AvailabilityPeriod,
   etag?: string,
-  forceFresh?: boolean,
-  revalidateNow?: boolean
+  forceFresh?: boolean
 ): Promise<{ data: DashboardData | null; etag?: string }> {
   const params = new URLSearchParams({ trendPeriod });
   if (forceFresh) {
     params.set("forceRefresh", "1");
     params.set("_t", String(Date.now()));
-  } else if (revalidateNow) {
-    params.set("revalidate", "1");
-    params.set("_t", String(Date.now()));
   }
 
   const headers: HeadersInit = {};
-  if (etag && !forceFresh && !revalidateNow) {
+  if (etag && !forceFresh) {
     headers["If-None-Match"] = etag;
   }
 
   const response = await fetch(`/api/dashboard?${params.toString()}`, {
+    cache: "no-store",
     headers,
   });
 
@@ -252,7 +289,6 @@ export interface FetchWithCacheOptions {
   forceFresh?: boolean;
   onBackgroundUpdate?: (data: DashboardData) => void;
   revalidateIfFresh?: boolean;
-  revalidateNow?: boolean;
 }
 
 export interface FetchWithCacheResult {
@@ -262,32 +298,17 @@ export interface FetchWithCacheResult {
 }
 
 /**
- * 带缓存的数据获取（SWR 模式）
+ * 带缓存的数据获取（SWR）
  *
- * 1. 缓存有效（< 2分钟）：直接返回，不发请求
- * 2. 缓存过期但存在：返回旧数据，后台刷新
- * 3. 无缓存：等待请求完成
+ * 1. 有快照：立刻返回，后台查库
+ * 2. 无快照：等待请求完成
  */
 export async function fetchWithCache(
   options: FetchWithCacheOptions
 ): Promise<FetchWithCacheResult> {
-  const { trendPeriod, forceFresh, onBackgroundUpdate, revalidateIfFresh, revalidateNow } = options;
+  const { trendPeriod, forceFresh, onBackgroundUpdate } = options;
   const cached = getCache(trendPeriod);
   const key = getCacheKey(trendPeriod);
-
-  if (revalidateNow && !forceFresh) {
-    const { data, etag } = await fetchFromNetwork(trendPeriod, undefined, false, true);
-    if (data) {
-      recordMiss(true);
-      setCache(trendPeriod, data, etag);
-      return { data, fromCache: false, isRevalidating: false };
-    }
-    if (cached) {
-      recordHit(true);
-      return { data: cached.data, fromCache: true, isRevalidating: false };
-    }
-    throw new Error("无数据可用");
-  }
 
   // 强制刷新：忽略缓存
   if (forceFresh) {
@@ -305,21 +326,10 @@ export async function fetchWithCache(
     throw new Error("无数据可用");
   }
 
-  // 缓存有效：直接返回
-  if (cached && !isExpired(cached)) {
-    if (revalidateIfFresh) {
-      revalidateInBackground(trendPeriod, cached.etag, onBackgroundUpdate);
-      recordHit(false);
-      return { data: cached.data, fromCache: true, isRevalidating: true };
-    }
-    recordHit(false);
-    return { data: cached.data, fromCache: true, isRevalidating: false };
-  }
-
-  // 缓存过期但存在：返回旧数据，后台刷新
+  // 有快照立刻返回，同时后台查库拿最新
   if (cached) {
     revalidateInBackground(trendPeriod, cached.etag, onBackgroundUpdate);
-    recordHit(true);
+    recordHit(isExpired(cached));
     return { data: cached.data, fromCache: true, isRevalidating: true };
   }
 

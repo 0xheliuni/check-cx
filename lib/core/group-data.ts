@@ -63,7 +63,7 @@ export interface GroupDashboardData {
  * 获取所有可用的分组名称
  */
 export async function getAvailableGroups(): Promise<string[]> {
-  const allConfigs = await loadProviderConfigsFromDB();
+  const allConfigs = await loadProviderConfigsFromDB({ forceRefresh: true });
   const groupSet = new Set<string>();
 
   for (const config of allConfigs) {
@@ -100,7 +100,10 @@ export async function loadGroupDashboardData(
 ): Promise<GroupDashboardData | null> {
   ensureOfficialStatusPoller();
 
-  const allConfigs = await loadProviderConfigsFromDB();
+  const bypassReadCaches = Boolean(options?.bypassReadCaches);
+  const allConfigs = await loadProviderConfigsFromDB({
+    forceRefresh: bypassReadCaches,
+  });
 
   // 筛选指定分组的配置
   const isTargetUngrouped = targetGroupName === UNGROUPED_KEY;
@@ -127,7 +130,6 @@ export async function loadGroupDashboardData(
   const cacheKey = `group:${targetGroupName}:${pollIntervalMs}:${providerKey}`;
   const refreshMode = options?.refreshMode ?? "missing";
   const trendPeriod = options?.trendPeriod ?? "7d";
-  const bypassReadCaches = Boolean(options?.bypassReadCaches);
   const cacheKeyWithPeriod = getGroupCacheKey(
     targetGroupName,
     pollIntervalMs,
@@ -229,5 +231,21 @@ export async function loadGroupDashboardData(
     return inflight;
   }
 
-  return loadData();
+  const bypassCached = groupDashboardCache.get(cacheKeyWithPeriod);
+  if (bypassCached?.inflight) {
+    return bypassCached.inflight;
+  }
+
+  const inflight = loadData().finally(() => {
+    const entry = groupDashboardCache.get(cacheKeyWithPeriod);
+    if (entry?.inflight === inflight) {
+      delete entry.inflight;
+    }
+  });
+  groupDashboardCache.set(cacheKeyWithPeriod, {
+    data: bypassCached?.data,
+    expiresAt: 0,
+    inflight,
+  });
+  return inflight;
 }

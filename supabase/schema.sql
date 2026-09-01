@@ -433,44 +433,8 @@ ALTER TABLE public.check_challenges ENABLE ROW LEVEL SECURITY;
 CREATE POLICY allow_anon_select_history
     ON public.check_history
     FOR SELECT
-    TO anon, authenticated
+    TO anon
     USING (true);
-
-GRANT SELECT ON public.check_history TO anon, authenticated;
-GRANT SELECT ON public.group_info TO anon, authenticated;
-GRANT SELECT ON public.system_notifications TO anon, authenticated;
-
--- Dashboard Realtime：只发布公开可读表，禁止包含 check_configs（含 api_key）
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
-    CREATE PUBLICATION supabase_realtime;
-  END IF;
-END
-$$;
-
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_publication_tables
-    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'check_history'
-  ) THEN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.check_history;
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_publication_tables
-    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'group_info'
-  ) THEN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.group_info;
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_publication_tables
-    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'system_notifications'
-  ) THEN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.system_notifications;
-  END IF;
-END
-$$;
 
 -- group_info: 允许所有人读取
 CREATE POLICY allow_public_read_group_info

@@ -63,6 +63,38 @@ function getCacheKey(groupName: string, trendPeriod: AvailabilityPeriod): string
   return `group:${groupName}:${trendPeriod}`;
 }
 
+const STORAGE_PREFIX = "check-cx:group:";
+
+function readPersisted(key: string): CacheEntry | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  try {
+    const raw = window.sessionStorage.getItem(STORAGE_PREFIX + key);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as CacheEntry;
+    if (!parsed?.data) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writePersisted(key: string, entry: CacheEntry): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  try {
+    window.sessionStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(entry));
+  } catch {
+    // 配额满时忽略
+  }
+}
+
 const cache = new Map<string, CacheEntry>();
 const pendingRequests = new Map<string, Promise<GroupDashboardData | null>>();
 
@@ -80,7 +112,15 @@ export function getGroupCache(
 ): CacheEntry | null {
   const key = getCacheKey(groupName, trendPeriod);
   const entry = cache.get(key);
-  return entry ?? null;
+  if (entry) {
+    return entry;
+  }
+  const persisted = readPersisted(key);
+  if (persisted) {
+    cache.set(key, persisted);
+    return persisted;
+  }
+  return null;
 }
 
 export function setGroupCache(
@@ -94,12 +134,14 @@ export function setGroupCache(
     Number.isFinite(data.pollIntervalMs) && data.pollIntervalMs > 0
       ? data.pollIntervalMs
       : DEFAULT_CACHE_TTL_MS;
-  cache.set(key, {
+  const entry: CacheEntry = {
     data,
     timestamp: Date.now(),
     etag,
     ttlMs,
-  });
+  };
+  cache.set(key, entry);
+  writePersisted(key, entry);
 }
 
 function touchCache(groupName: string, trendPeriod: AvailabilityPeriod): void {
@@ -158,26 +200,22 @@ async function fetchFromNetwork(
   groupName: string,
   trendPeriod: AvailabilityPeriod,
   etag?: string,
-  forceFresh?: boolean,
-  revalidateNow?: boolean
+  forceFresh?: boolean
 ): Promise<{ data: GroupDashboardData | null; etag?: string }> {
   const params = new URLSearchParams({ trendPeriod });
   if (forceFresh) {
     params.set("forceRefresh", "1");
     params.set("_t", String(Date.now()));
-  } else if (revalidateNow) {
-    params.set("revalidate", "1");
-    params.set("_t", String(Date.now()));
   }
 
   const headers: HeadersInit = {};
-  if (etag && !forceFresh && !revalidateNow) {
+  if (etag && !forceFresh) {
     headers["If-None-Match"] = etag;
   }
 
   const response = await fetch(
     `/api/group/${encodeURIComponent(groupName)}?${params.toString()}`,
-    { headers }
+    { cache: "no-store", headers }
   );
 
   if (response.status === 304) {
@@ -233,7 +271,6 @@ export interface FetchGroupWithCacheOptions {
   forceFresh?: boolean;
   onBackgroundUpdate?: (data: GroupDashboardData) => void;
   revalidateIfFresh?: boolean;
-  revalidateNow?: boolean;
 }
 
 export interface FetchGroupWithCacheResult {
@@ -250,31 +287,9 @@ export async function fetchGroupWithCache(
     trendPeriod,
     forceFresh,
     onBackgroundUpdate,
-    revalidateIfFresh,
-    revalidateNow,
   } = options;
   const cached = getGroupCache(groupName, trendPeriod);
   const key = getCacheKey(groupName, trendPeriod);
-
-  if (revalidateNow && !forceFresh) {
-    const { data, etag } = await fetchFromNetwork(
-      groupName,
-      trendPeriod,
-      undefined,
-      false,
-      true
-    );
-    if (data) {
-      recordMiss(true);
-      setGroupCache(groupName, trendPeriod, data, etag);
-      return { data, fromCache: false, isRevalidating: false };
-    }
-    if (cached) {
-      recordHit(true);
-      return { data: cached.data, fromCache: true, isRevalidating: false };
-    }
-    throw new Error("无数据可用");
-  }
 
   if (forceFresh) {
     const { data, etag } = await fetchFromNetwork(
@@ -295,24 +310,9 @@ export async function fetchGroupWithCache(
     throw new Error("无数据可用");
   }
 
-  if (cached && !isExpired(cached)) {
-    if (revalidateIfFresh) {
-      revalidateInBackground(
-        groupName,
-        trendPeriod,
-        cached.etag,
-        onBackgroundUpdate
-      );
-      recordHit(false);
-      return { data: cached.data, fromCache: true, isRevalidating: true };
-    }
-    recordHit(false);
-    return { data: cached.data, fromCache: true, isRevalidating: false };
-  }
-
   if (cached) {
     revalidateInBackground(groupName, trendPeriod, cached.etag, onBackgroundUpdate);
-    recordHit(true);
+    recordHit(isExpired(cached));
     return { data: cached.data, fromCache: true, isRevalidating: true };
   }
 

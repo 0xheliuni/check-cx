@@ -1,19 +1,26 @@
 "use client";
 
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useState, useSyncExternalStore} from "react";
 
 import {DashboardView} from "@/components/dashboard-view";
 import {DashboardSkeleton} from "@/components/dashboard-skeleton";
 import {STATUS_META} from "@/lib/core/status";
-import {fetchWithCache} from "@/lib/core/frontend-cache";
+import {fetchWithCache, getCache} from "@/lib/core/frontend-cache";
 import type {AvailabilityPeriod, DashboardData} from "@/lib/types";
 import {cn} from "@/lib/utils";
 
 const DEFAULT_PERIOD: AvailabilityPeriod = "7d";
+const emptySubscribe = () => () => undefined;
 
 export function DashboardBootstrap() {
+  const persisted = useSyncExternalStore(
+    emptySubscribe,
+    () => getCache(DEFAULT_PERIOD)?.data ?? null,
+    () => null
+  );
   const [data, setData] = useState<DashboardData | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const viewData = data ?? persisted;
 
   const loadData = useCallback(async (forceFresh?: boolean) => {
     try {
@@ -65,7 +72,7 @@ export function DashboardBootstrap() {
     };
   }, []);
 
-  if (!data) {
+  if (!viewData) {
     return (
       <div>
         <DashboardSkeleton />
@@ -92,5 +99,5 @@ export function DashboardBootstrap() {
     );
   }
 
-  return <DashboardView initialData={data} />;
+  return <DashboardView initialData={viewData} />;
 }

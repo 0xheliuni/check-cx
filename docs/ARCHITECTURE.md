@@ -82,10 +82,10 @@ check_request_templates + check_models + check_configs → 轮询器 → check_h
 
 ## 6. 缓存与一致性策略
 
-- **后端快照缓存**：`global-state.ts` 保存最近一次读取的历史快照与刷新时间。
-- **前端缓存**：`frontend-cache.ts` 实现 SWR 风格缓存，并配合 `ETag`。
+- **Dashboard / 分组 / 通知读路径**：源站每次请求查库（只合并并发 inflight），不走长 TTL / CDN。
+- **前端 SWR**：`frontend-cache.ts` 把快照写入内存和 sessionStorage。刷新先画出缓存，后台查库，有变更再替换。
 - **官方状态缓存**：`official-status-poller.ts` 使用内存 `Map` 缓存结果。
-- **Realtime**：浏览器订阅 `check_history` / `group_info` / `system_notifications` 的 Postgres Changes；写入后防抖拉取 `/api/dashboard?revalidate=1`（只读最新快照，不触发新检测）。Realtime 断开时回退到 `pollIntervalMs` 轮询。
+- **对外状态 API**：`/api/v1/status` 仍使用短 TTL 内存缓存，避免外部轮询打满数据库。
 
 ## 7. 多节点与选主
 

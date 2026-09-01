@@ -113,7 +113,10 @@ async function loadDashboardDataInternal(options?: {
   bypassReadCaches?: boolean;
 }): Promise<DashboardLoadResult> {
   ensureOfficialStatusPoller();
-  const allConfigs = await loadProviderConfigsFromDB();
+  const bypassReadCaches = Boolean(options?.bypassReadCaches);
+  const allConfigs = await loadProviderConfigsFromDB({
+    forceRefresh: bypassReadCaches,
+  });
   const maintenanceConfigs = allConfigs.filter((cfg) => cfg.is_maintenance);
   const activeConfigs = allConfigs.filter((cfg) => !cfg.is_maintenance);
 
@@ -124,7 +127,6 @@ async function loadDashboardDataInternal(options?: {
     allowedIds.size > 0 ? [...allowedIds].sort().join("|") : "__empty__";
   const refreshMode = options?.refreshMode ?? "missing";
   const trendPeriod = options?.trendPeriod ?? "7d";
-  const bypassReadCaches = Boolean(options?.bypassReadCaches);
   const cacheKey = `dashboard:${pollIntervalMs}:${providerKey}`;
   const cacheKeyWithPeriod = getDashboardCacheKey(
     pollIntervalMs,
@@ -232,5 +234,24 @@ async function loadDashboardDataInternal(options?: {
     return inflight;
   }
 
-  return loadData();
+  const bypassCached = dashboardCache.get(cacheKeyWithPeriod);
+  if (bypassCached?.inflight) {
+    dashboardCacheMetrics.inflightHits += 1;
+    return bypassCached.inflight;
+  }
+
+  dashboardCacheMetrics.misses += 1;
+  const inflight = loadData().finally(() => {
+    const entry = dashboardCache.get(cacheKeyWithPeriod);
+    if (entry?.inflight === inflight) {
+      delete entry.inflight;
+    }
+  });
+  dashboardCache.set(cacheKeyWithPeriod, {
+    data: bypassCached?.data,
+    etag: bypassCached?.etag,
+    expiresAt: 0,
+    inflight,
+  });
+  return inflight;
 }

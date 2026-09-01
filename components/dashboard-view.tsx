@@ -2,7 +2,6 @@
 
 import {useCallback, useEffect, useMemo, useState, useSyncExternalStore} from "react";
 import {fetchWithCache, prefetchDashboardData, setCache} from "@/lib/core/frontend-cache";
-import {isRealtimeConnected, useRealtimeDashboardRefresh} from "@/lib/core/dashboard-realtime";
 import {prefetchGroupData} from "@/lib/core/group-frontend-cache";
 import Image from "next/image";
 import Link from "next/link";
@@ -55,7 +54,7 @@ import {cn} from "@/lib/utils";
 import {parseTagList, getTagColorClass} from "@/lib/utils/tag-colors";
 
 interface DashboardViewProps {
-  /** 首屏聚合数据，Realtime 刷新的初始快照 */
+  /** 首屏聚合数据，刷新页面时重新向接口拉最新快照 */
   initialData: DashboardData;
 }
 
@@ -282,7 +281,7 @@ function GroupPanel({
 /**
  * Dashboard 主视图
  * - 负责渲染整体头部统计与 Provider 卡片
- * - 通过 Supabase Realtime 在检测结果写入后刷新，Realtime 不可用时回退到 pollIntervalMs 轮询
+ * - 在浏览器端按 pollIntervalMs 定时拉取 /api/dashboard 并维护倒计时
  */
 export function DashboardView({ initialData }: DashboardViewProps) {
   const [data, setData] = useState(initialData);
@@ -447,8 +446,7 @@ export function DashboardView({ initialData }: DashboardViewProps) {
     async (
       period?: AvailabilityPeriod,
       forceFresh?: boolean,
-      revalidateIfFresh?: boolean,
-      revalidateNow?: boolean
+      revalidateIfFresh?: boolean
     ) => {
     setIsRefreshing(true);
     try {
@@ -457,7 +455,6 @@ export function DashboardView({ initialData }: DashboardViewProps) {
         trendPeriod: targetPeriod,
         forceFresh,
         revalidateIfFresh,
-        revalidateNow,
         onBackgroundUpdate: (newData) => {
           setData(newData);
         },
@@ -469,11 +466,6 @@ export function DashboardView({ initialData }: DashboardViewProps) {
       setIsRefreshing(false);
     }
   }, [selectedPeriod]);
-
-  const refreshFromRealtime = useCallback(() => {
-    refresh(undefined, false, false, true).catch(() => undefined);
-  }, [refresh]);
-  const realtimeStatus = useRealtimeDashboardRefresh(refreshFromRealtime);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -503,9 +495,6 @@ export function DashboardView({ initialData }: DashboardViewProps) {
   }, [data.trendPeriod, groupedTimelines]);
 
   useEffect(() => {
-    if (isRealtimeConnected(realtimeStatus)) {
-      return;
-    }
     if (!data.pollIntervalMs || data.pollIntervalMs <= 0) {
       return;
     }
@@ -513,7 +502,7 @@ export function DashboardView({ initialData }: DashboardViewProps) {
       refresh(undefined, false, true).catch(() => undefined);
     }, data.pollIntervalMs);
     return () => window.clearInterval(timer);
-  }, [data.pollIntervalMs, realtimeStatus, refresh]);
+  }, [data.pollIntervalMs, refresh]);
 
   useEffect(() => {
     if (selectedPeriod === data.trendPeriod) {

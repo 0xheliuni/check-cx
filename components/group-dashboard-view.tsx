@@ -8,7 +8,6 @@ import {ProviderCard} from "@/components/provider-card";
 import {StatusSummary} from "@/components/status-summary";
 import {ClientTime} from "@/components/client-time";
 import {fetchGroupWithCache, prefetchGroupData, setGroupCache} from "@/lib/core/group-frontend-cache";
-import {isRealtimeConnected, useRealtimeDashboardRefresh} from "@/lib/core/dashboard-realtime";
 import type {AvailabilityPeriod, ProviderTimeline} from "@/lib/types";
 import type {GroupDashboardData} from "@/lib/core/group-data";
 import {cn} from "@/lib/utils";
@@ -72,8 +71,7 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
     async (
       period?: AvailabilityPeriod,
       forceFresh?: boolean,
-      revalidateIfFresh?: boolean,
-      revalidateNow?: boolean
+      revalidateIfFresh?: boolean
     ) => {
     if (lockRef.current) {
       return;
@@ -87,7 +85,6 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
         trendPeriod: targetPeriod,
         forceFresh,
         revalidateIfFresh,
-        revalidateNow,
         onBackgroundUpdate: (newData) => {
           setData(newData);
         },
@@ -100,11 +97,6 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
       lockRef.current = false;
     }
   }, [groupName, selectedPeriod]);
-
-  const refreshFromRealtime = useCallback(() => {
-    refresh(undefined, false, false, true).catch(() => undefined);
-  }, [refresh]);
-  const realtimeStatus = useRealtimeDashboardRefresh(refreshFromRealtime);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -123,9 +115,6 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
   }, [data.trendPeriod, groupName]);
 
   useEffect(() => {
-    if (isRealtimeConnected(realtimeStatus)) {
-      return;
-    }
     if (!data.pollIntervalMs || data.pollIntervalMs <= 0) {
       return;
     }
@@ -133,7 +122,7 @@ export function GroupDashboardView({ groupName, initialData }: GroupDashboardVie
       refresh(undefined, false, true).catch(() => undefined);
     }, data.pollIntervalMs);
     return () => window.clearInterval(timer);
-  }, [data.pollIntervalMs, realtimeStatus, refresh]);
+  }, [data.pollIntervalMs, refresh]);
 
   useEffect(() => {
     if (selectedPeriod === data.trendPeriod) {

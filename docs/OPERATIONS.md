@@ -39,7 +39,6 @@
 
 - 执行 `supabase/migrations/` 下的迁移（按时间顺序）。
 - 如使用 dev schema，需同步执行 `*_dev.sql` 迁移。
-- Dashboard 实时刷新依赖 `20260901120000_enable_dashboard_realtime.sql`：把 `check_history`、`group_info`、`system_notifications` 加入 `supabase_realtime` publication。不要把 `check_configs` 加入 publication（含 API key）。
 
 ### 3.2.1 模型拆分迁移后的自检 SQL
 

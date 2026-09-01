@@ -1,24 +1,31 @@
 "use client";
 
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useState, useSyncExternalStore} from "react";
 
 import {GroupDashboardView} from "@/components/group-dashboard-view";
 import {GroupDashboardSkeleton} from "@/components/dashboard-skeleton";
 import {STATUS_META} from "@/lib/core/status";
-import {fetchGroupWithCache} from "@/lib/core/group-frontend-cache";
+import {fetchGroupWithCache, getGroupCache} from "@/lib/core/group-frontend-cache";
 import type {GroupDashboardData} from "@/lib/core/group-data";
 import type {AvailabilityPeriod} from "@/lib/types";
 import {cn} from "@/lib/utils";
 
 const DEFAULT_PERIOD: AvailabilityPeriod = "7d";
+const emptySubscribe = () => () => undefined;
 
 interface GroupDashboardBootstrapProps {
   groupName: string;
 }
 
 export function GroupDashboardBootstrap({ groupName }: GroupDashboardBootstrapProps) {
+  const persisted = useSyncExternalStore(
+    emptySubscribe,
+    () => getGroupCache(groupName, DEFAULT_PERIOD)?.data ?? null,
+    () => null
+  );
   const [data, setData] = useState<GroupDashboardData | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const viewData = data ?? persisted;
 
   const loadData = useCallback(
     async (forceFresh?: boolean) => {
@@ -75,7 +82,7 @@ export function GroupDashboardBootstrap({ groupName }: GroupDashboardBootstrapPr
     };
   }, [groupName]);
 
-  if (!data) {
+  if (!viewData) {
     return (
       <div>
         <GroupDashboardSkeleton />
@@ -102,5 +109,5 @@ export function GroupDashboardBootstrap({ groupName }: GroupDashboardBootstrapPr
     );
   }
 
-  return <GroupDashboardView groupName={groupName} initialData={data} />;
+  return <GroupDashboardView groupName={groupName} initialData={viewData} />;
 }

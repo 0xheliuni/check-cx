@@ -1,14 +1,10 @@
 import {NextResponse} from "next/server";
 
 import {loadDashboardDataWithEtag} from "@/lib/core/dashboard-data";
-import {getPollingIntervalMs} from "@/lib/core/polling-config";
 import type {AvailabilityPeriod} from "@/lib/types";
 
 
 const VALID_PERIODS: AvailabilityPeriod[] = ["7d", "15d", "30d"];
-
-/** 数据变化周期：5 分钟 */
-const DATA_CHANGE_CYCLE_SECONDS = 5 * 60;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -16,9 +12,6 @@ export async function GET(request: Request) {
   const forceRefreshParam = searchParams.get("forceRefresh");
   const shouldForceRefresh =
     forceRefreshParam === "1" || forceRefreshParam === "true";
-  const shouldRevalidate =
-    searchParams.get("revalidate") === "1" ||
-    searchParams.get("revalidate") === "true";
   const trendPeriod = VALID_PERIODS.includes(period as AvailabilityPeriod)
     ? (period as AvailabilityPeriod)
     : undefined;
@@ -26,7 +19,7 @@ export async function GET(request: Request) {
   const { data, etag } = await loadDashboardDataWithEtag({
     refreshMode: shouldForceRefresh ? "always" : "never",
     trendPeriod,
-    bypassReadCaches: shouldRevalidate && !shouldForceRefresh,
+    bypassReadCaches: true,
   });
 
   // 检查条件请求
@@ -41,27 +34,11 @@ export async function GET(request: Request) {
     });
   }
 
-  // 计算缓存时间
-  const pollIntervalSeconds = Math.floor(getPollingIntervalMs() / 1000);
-
-  // 构建响应
   const response = NextResponse.json(data);
 
-  // 设置缓存头
-  // Cache-Control: 浏览器每次都向 CDN 验证
-  response.headers.set("Cache-Control", "public, no-cache");
-
-  if (shouldRevalidate || shouldForceRefresh) {
-    response.headers.set("CDN-Cache-Control", "no-store");
-    response.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
-  } else {
-    // CDN-Cache-Control: Cloudflare 边缘节点缓存
-    response.headers.set("CDN-Cache-Control", `max-age=${pollIntervalSeconds}`);
-    response.headers.set(
-      "Cloudflare-CDN-Cache-Control",
-      `max-age=${pollIntervalSeconds}, stale-while-revalidate=${DATA_CHANGE_CYCLE_SECONDS}`
-    );
-  }
+  response.headers.set("Cache-Control", "no-store");
+  response.headers.set("CDN-Cache-Control", "no-store");
+  response.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
 
   // ETag
   response.headers.set("ETag", etag);

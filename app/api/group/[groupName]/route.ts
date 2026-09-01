@@ -1,15 +1,11 @@
 import {NextResponse} from "next/server";
 import {loadGroupDashboardData} from "@/lib/core/group-data";
-import {getPollingIntervalMs} from "@/lib/core/polling-config";
 import type {AvailabilityPeriod} from "@/lib/types";
 
 interface RouteContext {
   params: Promise<{ groupName: string }>;
 }
 
-
-/** 数据变化周期：5 分钟 */
-const DATA_CHANGE_CYCLE_SECONDS = 5 * 60;
 
 /**
  * 生成简单的哈希作为 ETag
@@ -33,9 +29,6 @@ export async function GET(_request: Request, context: RouteContext) {
   const forceRefreshParam = searchParams.get("forceRefresh");
   const shouldForceRefresh =
     forceRefreshParam === "1" || forceRefreshParam === "true";
-  const shouldRevalidate =
-    searchParams.get("revalidate") === "1" ||
-    searchParams.get("revalidate") === "true";
   const trendPeriod = (["7d", "15d", "30d"] as AvailabilityPeriod[]).includes(
     period as AvailabilityPeriod
   )
@@ -45,7 +38,7 @@ export async function GET(_request: Request, context: RouteContext) {
   const data = await loadGroupDashboardData(decodedGroupName, {
     refreshMode: shouldForceRefresh ? "always" : "never",
     trendPeriod,
-    bypassReadCaches: shouldRevalidate && !shouldForceRefresh,
+    bypassReadCaches: true,
   });
 
   if (!data) {
@@ -72,22 +65,11 @@ export async function GET(_request: Request, context: RouteContext) {
     });
   }
 
-  // 计算缓存时间
-  const pollIntervalSeconds = Math.floor(getPollingIntervalMs() / 1000);
-
   const response = NextResponse.json(data);
 
-  response.headers.set("Cache-Control", "public, no-cache");
-  if (shouldRevalidate || shouldForceRefresh) {
-    response.headers.set("CDN-Cache-Control", "no-store");
-    response.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
-  } else {
-    response.headers.set("CDN-Cache-Control", `max-age=${pollIntervalSeconds}`);
-    response.headers.set(
-      "Cloudflare-CDN-Cache-Control",
-      `max-age=${pollIntervalSeconds}, stale-while-revalidate=${DATA_CHANGE_CYCLE_SECONDS}`
-    );
-  }
+  response.headers.set("Cache-Control", "no-store");
+  response.headers.set("CDN-Cache-Control", "no-store");
+  response.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
   response.headers.set("ETag", etag);
   response.headers.set("Vary", "Accept-Encoding");
 
