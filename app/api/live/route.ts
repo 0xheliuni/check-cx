@@ -2,8 +2,6 @@ import { connection } from "next/server";
 
 import { createConfigChangeStream } from "@/lib/core/config-change-watch";
 
-export const runtime = "nodejs";
-
 export async function GET() {
   await connection();
 
