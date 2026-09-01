@@ -85,6 +85,7 @@ check_request_templates + check_models + check_configs → 轮询器 → check_h
 - **后端快照缓存**：`global-state.ts` 保存最近一次读取的历史快照与刷新时间。
 - **前端缓存**：`frontend-cache.ts` 实现 SWR 风格缓存，并配合 `ETag`。
 - **官方状态缓存**：`official-status-poller.ts` 使用内存 `Map` 缓存结果。
+- **Realtime**：浏览器订阅 `check_history` / `group_info` / `system_notifications` 的 Postgres Changes；写入后防抖拉取 `/api/dashboard?revalidate=1`（只读最新快照，不触发新检测）。Realtime 断开时回退到 `pollIntervalMs` 轮询。
 
 ## 7. 多节点与选主
 

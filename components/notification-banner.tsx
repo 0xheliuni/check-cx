@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { X, AlertCircle, Info, AlertTriangle } from "lucide-react";
 import { SystemNotificationRow } from "@/lib/types/database";
+import { useRealtimeNotificationsRefresh } from "@/lib/core/dashboard-realtime";
 import { cn } from "@/lib/utils/cn";
 
 export function NotificationBanner() {
@@ -12,20 +13,45 @@ export function NotificationBanner() {
   const [visible, setVisible] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/notifications?_t=${Date.now()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    }
+  }, []);
+
   useEffect(() => {
-    async function fetchNotifications() {
+    let cancelled = false;
+
+    async function loadInitialNotifications() {
       try {
         const response = await fetch("/api/notifications");
-        if (response.ok) {
-          const data = await response.json();
+        if (!response.ok || cancelled) {
+          return;
+        }
+        const data = (await response.json()) as SystemNotificationRow[];
+        if (!cancelled) {
           setNotifications(data);
         }
       } catch (error) {
-        console.error("Failed to fetch notifications:", error);
+        if (!cancelled) {
+          console.error("Failed to fetch notifications:", error);
+        }
       }
     }
-    fetchNotifications();
+
+    loadInitialNotifications().catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  useRealtimeNotificationsRefresh(fetchNotifications);
 
   useEffect(() => {
     if (notifications.length <= 1) return;

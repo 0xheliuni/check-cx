@@ -91,7 +91,8 @@ function mapRows(rows: AvailabilityStats[] | null): AvailabilityStatsMap {
 }
 
 export async function getAvailabilityStats(
-  configIds?: Iterable<string> | null
+  configIds?: Iterable<string> | null,
+  options?: { forceRefresh?: boolean }
 ): Promise<AvailabilityStatsMap> {
   const normalizedIds = normalizeIds(configIds);
   if (Array.isArray(normalizedIds) && normalizedIds.length === 0) {
@@ -104,6 +105,7 @@ export async function getAvailabilityStats(
   const cacheCovers =
     !normalizedIds || normalizedIds.every((id) => id in cache.data);
   if (
+    !options?.forceRefresh &&
     cacheCovers &&
     now - cache.lastFetchedAt < ttl &&
     Object.keys(cache.data).length > 0

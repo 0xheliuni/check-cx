@@ -33,6 +33,9 @@ export async function GET(_request: Request, context: RouteContext) {
   const forceRefreshParam = searchParams.get("forceRefresh");
   const shouldForceRefresh =
     forceRefreshParam === "1" || forceRefreshParam === "true";
+  const shouldRevalidate =
+    searchParams.get("revalidate") === "1" ||
+    searchParams.get("revalidate") === "true";
   const trendPeriod = (["7d", "15d", "30d"] as AvailabilityPeriod[]).includes(
     period as AvailabilityPeriod
   )
@@ -42,6 +45,7 @@ export async function GET(_request: Request, context: RouteContext) {
   const data = await loadGroupDashboardData(decodedGroupName, {
     refreshMode: shouldForceRefresh ? "always" : "never",
     trendPeriod,
+    bypassReadCaches: shouldRevalidate && !shouldForceRefresh,
   });
 
   if (!data) {
@@ -73,15 +77,17 @@ export async function GET(_request: Request, context: RouteContext) {
 
   const response = NextResponse.json(data);
 
-  // Cache-Control: 浏览器每次都向 CDN 验证
   response.headers.set("Cache-Control", "public, no-cache");
-  // CDN-Cache-Control: Cloudflare 边缘节点缓存
-  response.headers.set("CDN-Cache-Control", `max-age=${pollIntervalSeconds}`);
-  // Cloudflare-CDN-Cache-Control: 支持 stale-while-revalidate
-  response.headers.set(
-    "Cloudflare-CDN-Cache-Control",
-    `max-age=${pollIntervalSeconds}, stale-while-revalidate=${DATA_CHANGE_CYCLE_SECONDS}`
-  );
+  if (shouldRevalidate || shouldForceRefresh) {
+    response.headers.set("CDN-Cache-Control", "no-store");
+    response.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+  } else {
+    response.headers.set("CDN-Cache-Control", `max-age=${pollIntervalSeconds}`);
+    response.headers.set(
+      "Cloudflare-CDN-Cache-Control",
+      `max-age=${pollIntervalSeconds}, stale-while-revalidate=${DATA_CHANGE_CYCLE_SECONDS}`
+    );
+  }
   response.headers.set("ETag", etag);
   response.headers.set("Vary", "Accept-Encoding");
 

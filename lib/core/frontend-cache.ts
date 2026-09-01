@@ -173,16 +173,20 @@ export async function prefetchDashboardData(
 async function fetchFromNetwork(
   trendPeriod: AvailabilityPeriod,
   etag?: string,
-  forceFresh?: boolean
+  forceFresh?: boolean,
+  revalidateNow?: boolean
 ): Promise<{ data: DashboardData | null; etag?: string }> {
   const params = new URLSearchParams({ trendPeriod });
   if (forceFresh) {
     params.set("forceRefresh", "1");
     params.set("_t", String(Date.now()));
+  } else if (revalidateNow) {
+    params.set("revalidate", "1");
+    params.set("_t", String(Date.now()));
   }
 
   const headers: HeadersInit = {};
-  if (etag) {
+  if (etag && !forceFresh && !revalidateNow) {
     headers["If-None-Match"] = etag;
   }
 
@@ -248,6 +252,7 @@ export interface FetchWithCacheOptions {
   forceFresh?: boolean;
   onBackgroundUpdate?: (data: DashboardData) => void;
   revalidateIfFresh?: boolean;
+  revalidateNow?: boolean;
 }
 
 export interface FetchWithCacheResult {
@@ -266,9 +271,23 @@ export interface FetchWithCacheResult {
 export async function fetchWithCache(
   options: FetchWithCacheOptions
 ): Promise<FetchWithCacheResult> {
-  const { trendPeriod, forceFresh, onBackgroundUpdate, revalidateIfFresh } = options;
+  const { trendPeriod, forceFresh, onBackgroundUpdate, revalidateIfFresh, revalidateNow } = options;
   const cached = getCache(trendPeriod);
   const key = getCacheKey(trendPeriod);
+
+  if (revalidateNow && !forceFresh) {
+    const { data, etag } = await fetchFromNetwork(trendPeriod, undefined, false, true);
+    if (data) {
+      recordMiss(true);
+      setCache(trendPeriod, data, etag);
+      return { data, fromCache: false, isRevalidating: false };
+    }
+    if (cached) {
+      recordHit(true);
+      return { data: cached.data, fromCache: true, isRevalidating: false };
+    }
+    throw new Error("无数据可用");
+  }
 
   // 强制刷新：忽略缓存
   if (forceFresh) {

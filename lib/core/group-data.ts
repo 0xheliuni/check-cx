@@ -6,7 +6,7 @@
  * - 获取所有可用的分组列表
  */
 import {loadProviderConfigsFromDB} from "../database/config-loader";
-import {getGroupInfo} from "../database/group-info";
+import {loadGroupInfos} from "../database/group-info";
 import {getAvailabilityStats} from "../database/availability";
 import {getIntelligenceStats} from "../database/intelligence";
 import {getPollingIntervalLabel, getPollingIntervalMs} from "./polling-config";
@@ -92,7 +92,11 @@ export async function getAvailableGroups(): Promise<string[]> {
  */
 export async function loadGroupDashboardData(
   targetGroupName: string,
-  options?: { refreshMode?: RefreshMode; trendPeriod?: AvailabilityPeriod }
+  options?: {
+    refreshMode?: RefreshMode;
+    trendPeriod?: AvailabilityPeriod;
+    bypassReadCaches?: boolean;
+  }
 ): Promise<GroupDashboardData | null> {
   ensureOfficialStatusPoller();
 
@@ -123,6 +127,7 @@ export async function loadGroupDashboardData(
   const cacheKey = `group:${targetGroupName}:${pollIntervalMs}:${providerKey}`;
   const refreshMode = options?.refreshMode ?? "missing";
   const trendPeriod = options?.trendPeriod ?? "7d";
+  const bypassReadCaches = Boolean(options?.bypassReadCaches);
   const cacheKeyWithPeriod = getGroupCacheKey(
     targetGroupName,
     pollIntervalMs,
@@ -131,7 +136,7 @@ export async function loadGroupDashboardData(
   );
   const cacheTtlMs = getGroupCacheTtlMs(pollIntervalMs);
   const now = Date.now();
-  const shouldBypassCache = refreshMode === "always";
+  const shouldBypassCache = refreshMode === "always" || bypassReadCaches;
 
   const loadData = async (): Promise<GroupDashboardData | null> => {
     // history / availabilityStats / intelligenceStats / groupInfo 互不依赖，并行拉取
@@ -144,11 +149,16 @@ export async function loadGroupDashboardData(
           activeConfigs,
           allowedIds,
         },
-        refreshMode
+        refreshMode,
+        { bypassReadCaches }
       ),
-      getAvailabilityStats(configIds),
-      getIntelligenceStats(configIds),
-      isTargetUngrouped ? Promise.resolve(null) : getGroupInfo(targetGroupName),
+      getAvailabilityStats(configIds, { forceRefresh: bypassReadCaches }),
+      getIntelligenceStats(configIds, { forceRefresh: bypassReadCaches }),
+      isTargetUngrouped
+        ? Promise.resolve(null)
+        : loadGroupInfos({ forceRefresh: bypassReadCaches }).then((infos) =>
+            infos.find((info) => info.group_name === targetGroupName) ?? null
+          ),
     ]);
 
     const providerTimelines = buildProviderTimelines(history, maintenanceConfigs);

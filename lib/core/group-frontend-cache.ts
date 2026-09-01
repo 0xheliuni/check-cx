@@ -158,16 +158,20 @@ async function fetchFromNetwork(
   groupName: string,
   trendPeriod: AvailabilityPeriod,
   etag?: string,
-  forceFresh?: boolean
+  forceFresh?: boolean,
+  revalidateNow?: boolean
 ): Promise<{ data: GroupDashboardData | null; etag?: string }> {
   const params = new URLSearchParams({ trendPeriod });
   if (forceFresh) {
     params.set("forceRefresh", "1");
     params.set("_t", String(Date.now()));
+  } else if (revalidateNow) {
+    params.set("revalidate", "1");
+    params.set("_t", String(Date.now()));
   }
 
   const headers: HeadersInit = {};
-  if (etag) {
+  if (etag && !forceFresh && !revalidateNow) {
     headers["If-None-Match"] = etag;
   }
 
@@ -229,6 +233,7 @@ export interface FetchGroupWithCacheOptions {
   forceFresh?: boolean;
   onBackgroundUpdate?: (data: GroupDashboardData) => void;
   revalidateIfFresh?: boolean;
+  revalidateNow?: boolean;
 }
 
 export interface FetchGroupWithCacheResult {
@@ -246,9 +251,30 @@ export async function fetchGroupWithCache(
     forceFresh,
     onBackgroundUpdate,
     revalidateIfFresh,
+    revalidateNow,
   } = options;
   const cached = getGroupCache(groupName, trendPeriod);
   const key = getCacheKey(groupName, trendPeriod);
+
+  if (revalidateNow && !forceFresh) {
+    const { data, etag } = await fetchFromNetwork(
+      groupName,
+      trendPeriod,
+      undefined,
+      false,
+      true
+    );
+    if (data) {
+      recordMiss(true);
+      setGroupCache(groupName, trendPeriod, data, etag);
+      return { data, fromCache: false, isRevalidating: false };
+    }
+    if (cached) {
+      recordHit(true);
+      return { data: cached.data, fromCache: true, isRevalidating: false };
+    }
+    throw new Error("无数据可用");
+  }
 
   if (forceFresh) {
     const { data, etag } = await fetchFromNetwork(

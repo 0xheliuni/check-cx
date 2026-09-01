@@ -93,6 +93,7 @@ export interface DashboardLoadResult {
 export async function loadDashboardData(options?: {
   refreshMode?: RefreshMode;
   trendPeriod?: AvailabilityPeriod;
+  bypassReadCaches?: boolean;
 }): Promise<DashboardData> {
   const result = await loadDashboardDataInternal(options);
   return result.data;
@@ -101,6 +102,7 @@ export async function loadDashboardData(options?: {
 export async function loadDashboardDataWithEtag(options?: {
   refreshMode?: RefreshMode;
   trendPeriod?: AvailabilityPeriod;
+  bypassReadCaches?: boolean;
 }): Promise<DashboardLoadResult> {
   return loadDashboardDataInternal(options);
 }
@@ -108,6 +110,7 @@ export async function loadDashboardDataWithEtag(options?: {
 async function loadDashboardDataInternal(options?: {
   refreshMode?: RefreshMode;
   trendPeriod?: AvailabilityPeriod;
+  bypassReadCaches?: boolean;
 }): Promise<DashboardLoadResult> {
   ensureOfficialStatusPoller();
   const allConfigs = await loadProviderConfigsFromDB();
@@ -121,6 +124,7 @@ async function loadDashboardDataInternal(options?: {
     allowedIds.size > 0 ? [...allowedIds].sort().join("|") : "__empty__";
   const refreshMode = options?.refreshMode ?? "missing";
   const trendPeriod = options?.trendPeriod ?? "7d";
+  const bypassReadCaches = Boolean(options?.bypassReadCaches);
   const cacheKey = `dashboard:${pollIntervalMs}:${providerKey}`;
   const cacheKeyWithPeriod = getDashboardCacheKey(
     pollIntervalMs,
@@ -129,7 +133,7 @@ async function loadDashboardDataInternal(options?: {
   );
   const cacheTtlMs = getDashboardCacheTtlMs(pollIntervalMs);
   const now = Date.now();
-  const shouldBypassCache = refreshMode === "always";
+  const shouldBypassCache = refreshMode === "always" || bypassReadCaches;
 
   const loadData = async (): Promise<DashboardLoadResult> => {
     // history / groupInfos / availabilityStats / intelligenceStats 互不依赖，并行拉取
@@ -142,11 +146,12 @@ async function loadDashboardDataInternal(options?: {
           activeConfigs,
           allowedIds,
         },
-        refreshMode
+        refreshMode,
+        { bypassReadCaches }
       ),
-      loadGroupInfos(),
-      getAvailabilityStats(configIds),
-      getIntelligenceStats(configIds),
+      loadGroupInfos({ forceRefresh: bypassReadCaches }),
+      getAvailabilityStats(configIds, { forceRefresh: bypassReadCaches }),
+      getIntelligenceStats(configIds, { forceRefresh: bypassReadCaches }),
     ]);
 
     const providerTimelines = buildProviderTimelines(history, maintenanceConfigs);

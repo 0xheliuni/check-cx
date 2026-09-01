@@ -69,7 +69,8 @@ function mapRows(rows: IntelligenceStats[] | null): IntelligenceStatsMap {
 }
 
 export async function getIntelligenceStats(
-  configIds?: Iterable<string> | null
+  configIds?: Iterable<string> | null,
+  options?: { forceRefresh?: boolean }
 ): Promise<IntelligenceStatsMap> {
   const normalizedIds = normalizeIds(configIds);
   if (Array.isArray(normalizedIds) && normalizedIds.length === 0) {
@@ -82,6 +83,7 @@ export async function getIntelligenceStats(
   const cacheCovers =
     !normalizedIds || normalizedIds.every((id) => id in cache.data);
   if (
+    !options?.forceRefresh &&
     cacheCovers &&
     now - cache.lastFetchedAt < ttl &&
     Object.keys(cache.data).length > 0

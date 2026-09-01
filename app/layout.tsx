@@ -1,10 +1,14 @@
 import type {Metadata} from "next";
+import {connection} from "next/server";
+import {Suspense} from "react";
 import {JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import "@/lib/core/poller";
 import NextTopLoader from "nextjs-toploader";
 import {ThemeProvider} from "@/components/theme-provider";
 import {NotificationBanner} from "@/components/notification-banner";
+import {SupabaseBrowserProvider} from "@/lib/supabase/browser-context";
+import {getSupabasePublicConfig} from "@/lib/supabase/public-config";
 const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-mono'});
 
 export const metadata: Metadata = {
@@ -44,10 +48,27 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <NotificationBanner />
-          {children}
+          <Suspense>
+            <RealtimeShell>
+              <NotificationBanner />
+              {children}
+            </RealtimeShell>
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>
+  );
+}
+
+async function RealtimeShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  await connection();
+  return (
+    <SupabaseBrowserProvider config={getSupabasePublicConfig()}>
+      {children}
+    </SupabaseBrowserProvider>
   );
 }

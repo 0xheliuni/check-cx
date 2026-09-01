@@ -16,6 +16,9 @@ export async function GET(request: Request) {
   const forceRefreshParam = searchParams.get("forceRefresh");
   const shouldForceRefresh =
     forceRefreshParam === "1" || forceRefreshParam === "true";
+  const shouldRevalidate =
+    searchParams.get("revalidate") === "1" ||
+    searchParams.get("revalidate") === "true";
   const trendPeriod = VALID_PERIODS.includes(period as AvailabilityPeriod)
     ? (period as AvailabilityPeriod)
     : undefined;
@@ -23,6 +26,7 @@ export async function GET(request: Request) {
   const { data, etag } = await loadDashboardDataWithEtag({
     refreshMode: shouldForceRefresh ? "always" : "never",
     trendPeriod,
+    bypassReadCaches: shouldRevalidate && !shouldForceRefresh,
   });
 
   // 检查条件请求
@@ -47,14 +51,17 @@ export async function GET(request: Request) {
   // Cache-Control: 浏览器每次都向 CDN 验证
   response.headers.set("Cache-Control", "public, no-cache");
 
-  // CDN-Cache-Control: Cloudflare 边缘节点缓存
-  response.headers.set("CDN-Cache-Control", `max-age=${pollIntervalSeconds}`);
-
-  // Cloudflare-CDN-Cache-Control: 支持 stale-while-revalidate
-  response.headers.set(
-    "Cloudflare-CDN-Cache-Control",
-    `max-age=${pollIntervalSeconds}, stale-while-revalidate=${DATA_CHANGE_CYCLE_SECONDS}`
-  );
+  if (shouldRevalidate || shouldForceRefresh) {
+    response.headers.set("CDN-Cache-Control", "no-store");
+    response.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+  } else {
+    // CDN-Cache-Control: Cloudflare 边缘节点缓存
+    response.headers.set("CDN-Cache-Control", `max-age=${pollIntervalSeconds}`);
+    response.headers.set(
+      "Cloudflare-CDN-Cache-Control",
+      `max-age=${pollIntervalSeconds}, stale-while-revalidate=${DATA_CHANGE_CYCLE_SECONDS}`
+    );
+  }
 
   // ETag
   response.headers.set("ETag", etag);

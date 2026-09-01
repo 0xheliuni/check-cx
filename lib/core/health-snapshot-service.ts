@@ -30,7 +30,8 @@ async function readHistoryForScope(scope: SnapshotScope): Promise<HistorySnapsho
 
 export async function loadSnapshotForScope(
   scope: SnapshotScope,
-  refreshMode: RefreshMode
+  refreshMode: RefreshMode,
+  options?: { bypassReadCaches?: boolean }
 ): Promise<HistorySnapshot> {
   if (scope.allowedIds.size === 0) {
     return {};
@@ -38,9 +39,11 @@ export async function loadSnapshotForScope(
 
   const cacheEntry = getPingCacheEntry(scope.cacheKey);
   const now = Date.now();
+  const bypassReadCaches = Boolean(options?.bypassReadCaches);
 
   if (refreshMode === "never") {
     if (
+      !bypassReadCaches &&
       cacheEntry.history &&
       now - cacheEntry.lastPingAt < scope.pollIntervalMs
     ) {
