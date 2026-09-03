@@ -70,23 +70,49 @@ Check CX 持续探测 OpenAI / Gemini / Anthropic 等 AI 模型 API 的可用性
 
 ## 快速开始
 
-### Docker 部署（推荐）
+### 一键栈（Docker，推荐）
+
+`docker-compose.yml` 打包了完整的 [Supabase self-hosting 栈](https://github.com/supabase/supabase/tree/master/docker)（Postgres、PostgREST、GoTrue、Storage、Realtime、Studio、API 网关），外加 Check CX 面板与管理后台。首次启动自动建表——不需要云 Supabase 项目，不需要手动执行 SQL。
 
 ```bash
-mkdir check-cx && cd check-cx
-wget https://raw.githubusercontent.com/BingZi-233/check-cx/main/docker-compose.yml
-
-# 准备环境变量
-cat > .env <<'EOF'
-SUPABASE_URL=...
-SUPABASE_PUBLISHABLE_OR_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
-EOF
-
+git clone https://github.com/BingZi-233/check-cx.git
+cd check-cx
+cp .env.example .env
 docker compose up -d
 ```
 
-访问 `http://localhost:3000` 即可看到面板。
+访问：
+
+- **面板** `http://localhost:3000` —— 零配置可用
+- **管理后台** `http://localhost:3001` —— 登录需配置 GitHub OAuth（见下）
+- **Supabase API** `http://localhost:8000`
+
+所有可调项都在 `.env`（带注释，基于上游 Supabase `.env.example` 加 Check CX 变量）。
+
+#### 开启管理后台登录
+
+管理后台通过 Supabase Auth 走 GitHub OAuth 登录。创建一个 GitHub OAuth 应用，回调地址填 `http://<主机IP或域名>:8000/auth/v1/callback`（同机即 `http://localhost:8000/auth/v1/callback`），然后在 `.env` 中配置：
+
+```env
+GITHUB_ENABLED=true
+GITHUB_CLIENT_ID=...
+GITHUB_SECRET=...
+ADMIN_EMAILS=your@email.com
+# 同机访问可保持默认；局域网/公网访问改为 http://<主机IP或域名>:3001
+APP_URL=http://localhost:3001
+```
+
+#### 生产部署
+
+栈出厂使用公开演示 JWT 与默认密码——对外暴露前务必全部替换。用 vendored 的上游脚本生成生产密钥，写入 `.env`：
+
+```bash
+sh docker/supabase-stack/utils/generate-keys.sh       # 生成 JWT_SECRET / ANON_KEY / SERVICE_ROLE_KEY 等
+```
+
+至少替换：`POSTGRES_PASSWORD`、`JWT_SECRET`、`ANON_KEY`、`SERVICE_ROLE_KEY`、`DASHBOARD_USERNAME/PASSWORD`、`SECRET_KEY_BASE`、`VAULT_ENC_KEY`、`PG_META_CRYPTO_KEY`。局域网/公网访问还需将 `SUPABASE_PUBLIC_URL`、`API_EXTERNAL_URL`、`APP_URL`、`SUPABASE_URL` 设为主机实际地址。
+
+已有云 Supabase 项目？在 `.env` 设置 `SUPABASE_URL` 与对应 key，面板与管理后台会继续使用云端数据库（本地 Supabase 栈闲置运行）。
 
 ### 本地开发
 

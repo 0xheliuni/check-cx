@@ -70,23 +70,49 @@ One-click light/dark theme toggle, follows your system preference automatically.
 
 ## Getting Started
 
-### Docker (Recommended)
+### One-Command Stack (Docker, Recommended)
+
+`docker-compose.yml` bundles the full self-hosted [Supabase stack](https://github.com/supabase/supabase/tree/master/docker) (Postgres, PostgREST, GoTrue, Storage, Realtime, Studio, API gateway) plus the Check CX panel and admin panel. Tables are auto-created on first start — no cloud Supabase project, no manual SQL.
 
 ```bash
-mkdir check-cx && cd check-cx
-wget https://raw.githubusercontent.com/BingZi-233/check-cx/main/docker-compose.yml
-
-# Prepare environment variables
-cat > .env <<'EOF'
-SUPABASE_URL=...
-SUPABASE_PUBLISHABLE_OR_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
-EOF
-
+git clone https://github.com/BingZi-233/check-cx.git
+cd check-cx
+cp .env.example .env
 docker compose up -d
 ```
 
-Open `http://localhost:3000` to see the dashboard.
+Open:
+
+- **Panel** `http://localhost:3000` — works with zero config
+- **Admin** `http://localhost:3001` — sign-in requires GitHub OAuth (see below)
+- **Supabase API** `http://localhost:8000`
+
+All knobs live in `.env` (annotated, copy of the upstream Supabase `.env.example` plus Check CX variables).
+
+#### Enabling admin sign-in
+
+Admin authenticates via Supabase Auth with GitHub OAuth. Create a GitHub OAuth app with callback URL `http://<主机IP或域名>:8000/auth/v1/callback`（同机即 `http://localhost:8000/auth/v1/callback`）, then set in `.env`:
+
+```env
+GITHUB_ENABLED=true
+GITHUB_CLIENT_ID=...
+GITHUB_SECRET=...
+ADMIN_EMAILS=your@email.com
+# 同机访问可保持默认；局域网/公网访问改为 http://<主机IP或域名>:3001
+APP_URL=http://localhost:3001
+```
+
+#### Production deployment
+
+The stack ships with public demo JWTs and passwords — replace them before exposing to any network. Generate production secrets with the vendored upstream helpers, then set in `.env`:
+
+```bash
+sh docker/supabase-stack/utils/generate-keys.sh       # JWT_SECRET / ANON_KEY / SERVICE_ROLE_KEY 等
+```
+
+At minimum change: `POSTGRES_PASSWORD`, `JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY`, `DASHBOARD_USERNAME/PASSWORD`, `SECRET_KEY_BASE`, `VAULT_ENC_KEY`, `PG_META_CRYPTO_KEY`. For LAN/public access also set `SUPABASE_PUBLIC_URL`, `API_EXTERNAL_URL`, `APP_URL` and `SUPABASE_URL` to your host address.
+
+Already using a cloud Supabase project? Set `SUPABASE_URL` and your keys in `.env` — the panel and admin will keep using the cloud database (the bundled Supabase services simply sit idle).
 
 ### Local Development
 

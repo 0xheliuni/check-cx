@@ -1,17 +1,109 @@
+# =============================================================================
+# Check CX 一键部署栈（完整 Self-Hosted Supabase）
+#
+# 使用：
+#   cp .env.example .env     # 可选：按需修改
+#   docker compose up -d
+#
+# 本文件 include 了官方 self-hosted Supabase 栈（docker/supabase-stack/，
+# 来自 https://github.com/supabase/supabase/tree/master/docker ），并附加：
+#   - check-cx        监控面板
+#   - check-cx-admin  管理后台
+#   - check-cx-init   首次启动自动执行 supabase/schema.sql 建表
+#
+# 访问：
+#   面板         http://localhost:3000
+#   管理后台     http://localhost:3001（登录需在 .env 配置 GitHub OAuth）
+#   Supabase API http://localhost:8000
+#
+# 已有云 Supabase 项目？在 .env 中设置 SUPABASE_URL 与对应的
+# SUPABASE_PUBLISHABLE_OR_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY，面板与
+# 管理后台会改用云端数据库（本地栈闲置运行）。
+# =============================================================================
+
+name: check-cx
+
+include:
+  - path: docker/supabase-stack/docker-compose.yml
+
 services:
+  # 首次启动自动建表（幂等：表已存在则跳过）
+  check-cx-init:
+    image: postgres:17-alpine
+    container_name: check-cx-db-init
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./supabase/schema.sql:/check-cx-schema.sql:ro
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        echo "[check-cx] 检查数据库表..."
+        if psql -h db -U postgres -d postgres -tAc "SELECT to_regclass('public.check_configs')" | grep -q check_configs; then
+          echo "[check-cx] 表已存在，跳过初始化"
+        else
+          echo "[check-cx] 执行 schema.sql 建表..."
+          psql -h db -U postgres -d postgres -v ON_ERROR_STOP=1 -f /check-cx-schema.sql
+        fi
+
   check-cx:
-    image: bingzi233/check-cx:latest
+    image: bingzi233/check-cx:1.23.19
     container_name: check-cx
     restart: unless-stopped
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env
-    environment:
-      - NODE_ENV=production
-    # docker 内部日志用 local driver + 轮转，防止无限增长
     logging:
       driver: local
       options:
         max-size: "10m"
         max-file: "3"
+    depends_on:
+      check-cx-init:
+        condition: service_completed_successfully
+      api-gw:
+        condition: service_started
+    ports:
+      - "${CHECK_CX_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      # 未设置 SUPABASE_URL 时走栈内网关；设置了则沿用云 Supabase
+      SUPABASE_URL: ${SUPABASE_URL:-http://api-gw:8000}
+      SUPABASE_PUBLISHABLE_OR_ANON_KEY: ${SUPABASE_PUBLISHABLE_OR_ANON_KEY:-${ANON_KEY}}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-${SERVICE_ROLE_KEY}}
+      CHECK_NODE_ID: ${CHECK_NODE_ID:-local}
+      CHECK_POLL_INTERVAL_SECONDS: ${CHECK_POLL_INTERVAL_SECONDS:-60}
+      CHECK_CONCURRENCY: ${CHECK_CONCURRENCY:-5}
+      OFFICIAL_STATUS_CHECK_INTERVAL_SECONDS: ${OFFICIAL_STATUS_CHECK_INTERVAL_SECONDS:-300}
+      HISTORY_RETENTION_DAYS: ${HISTORY_RETENTION_DAYS:-30}
+
+  check-cx-admin:
+    image: bingzi233/check-cx-admin:0.3.3
+    container_name: check-cx-admin
+    restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      check-cx-init:
+        condition: service_completed_successfully
+      api-gw:
+        condition: service_started
+    ports:
+      - "${ADMIN_PORT:-3001}:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      NODE_ENV: production
+      # 浏览器要走这个地址完成 OAuth；默认 host.docker.internal 兼容器内调用
+      # 与本机浏览器，局域网/公网部署请改为 http://<主机IP或域名>:8000
+      SUPABASE_URL: ${SUPABASE_URL:-http://host.docker.internal:8000}
+      SUPABASE_PUBLISHABLE_OR_ANON_KEY: ${SUPABASE_PUBLISHABLE_OR_ANON_KEY:-${ANON_KEY}}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-${SERVICE_ROLE_KEY}}
+      SUPABASE_DB_SCHEMA: ${SUPABASE_DB_SCHEMA:-public}
+      APP_URL: ${APP_URL:-http://localhost:3001}
+      SUPABASE_OAUTH_PROVIDERS: github
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
