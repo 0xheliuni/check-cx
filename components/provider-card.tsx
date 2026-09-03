@@ -26,11 +26,11 @@ const formatRate = (value: number | null | undefined) =>
   typeof value === "number" ? `${value}%` : "—";
 
 const INTELLIGENCE_DIMENSIONS: Array<{ key: keyof IntelligenceStat; label: string }> = [
-  { key: "d1PassRate", label: "D1" },
-  { key: "d2PassRate", label: "D2" },
-  { key: "d3PassRate", label: "D3" },
-  { key: "d4PassRate", label: "D4" },
-  { key: "d5PassRate", label: "D5" },
+  { key: "d1PassRate", label: "D1 分类选择" },
+  { key: "d2PassRate", label: "D2 阅读理解" },
+  { key: "d3PassRate", label: "D3 状态追踪" },
+  { key: "d4PassRate", label: "D4 逻辑蕴涵" },
+  { key: "d5PassRate", label: "D5 指令遵循" },
 ];
 
 /** 智能评估得分 Tag：悬停展示各难度档通过率 */
@@ -49,8 +49,11 @@ function IntelligenceTag({ intelligence }: { intelligence: IntelligenceStat }) {
           {score}
         </Badge>
       </HoverCardTrigger>
-      <HoverCardContent side="top" className="w-40 rounded-xl p-3">
+      <HoverCardContent side="top" className="w-52 rounded-xl p-3">
         <div className="grid gap-1.5 text-xs">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            智能评估 · 近 30 天各题型通过率
+          </p>
           {INTELLIGENCE_DIMENSIONS.map((dim) => (
             <div key={dim.key} className="flex items-center justify-between">
               <span className="text-muted-foreground">{dim.label}</span>
@@ -63,6 +66,9 @@ function IntelligenceTag({ intelligence }: { intelligence: IntelligenceStat }) {
             <span className="text-muted-foreground">样本数</span>
             <span className="font-mono font-medium">{intelligence.totalSamples}</span>
           </div>
+          <p className="text-[10px] leading-snug text-muted-foreground">
+            综合得分按难度加权（1/2/4/8/16）；难题答错仅影响得分，不影响健康状态
+          </p>
         </div>
       </HoverCardContent>
     </HoverCard>

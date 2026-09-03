@@ -9,7 +9,8 @@
  * 核心流程：
  * 1. 根据 Provider 类型创建对应的 SDK 实例
  * 2. 发送数学挑战问题，验证模型真实可用性
- * 3. 通过流式响应快速获取首个 token，测量延迟
+ * 3. 通过流式响应获取首个非空 token，测量真实首字延迟（部分端点会
+ *    先吐空流伪造首字时间，只有首个非空增量才算数）
  * 4. 根据延迟阈值判定健康状态（operational/degraded/failed）
  *
  * 特殊支持：
@@ -438,7 +439,7 @@ function buildCheckResult(
  * 3. 验证响应中是否包含正确答案
  * 4. 根据延迟和验证结果判定健康状态
  *
- * 状态判定规则：
+ * 状态判定规则（延迟取首个非空 token 的时间）：
  * - operational：请求成功、验证通过、延迟 ≤ 6000ms
  * - degraded：请求成功、验证通过、延迟 > 6000ms
  * - validation_failed：收到回复但难度 1/2 题答案验证失败
@@ -479,13 +480,28 @@ export async function checkWithAiSdk(config: ProviderConfig): Promise<CheckResul
       },
     });
 
-    // 收集完整响应
+    // 收集完整响应：遍历 fullStream 同时捕获文本与推理增量。
+    // 部分端点会先吐空流伪造首字延迟，这里以首个非空增量作为真实首字时间；
+    // 推理增量也参与采集，避免模型把最终答案放进 reasoning 导致"回复为空"误判。
     let collectedResponse = "";
-    for await (const chunk of result.textStream) {
-      collectedResponse += chunk;
+    let collectedReasoning = "";
+    let firstTokenAt: number | null = null;
+    for await (const part of result.fullStream) {
+      let delta = "";
+      if (part.type === "text-delta") {
+        delta = part.text;
+        collectedResponse += delta;
+      } else if (part.type === "reasoning-delta") {
+        delta = part.text;
+        collectedReasoning += delta;
+      }
+      if (firstTokenAt === null && delta.trim()) {
+        firstTokenAt = Date.now();
+      }
     }
 
-    const latencyMs = Date.now() - startedAt;
+    // 首字延迟；流内没有任何非空增量时退化为整个流的耗时
+    const latencyMs = firstTokenAt === null ? Date.now() - startedAt : firstTokenAt - startedAt;
     const params = await buildParams();
 
     // 检查流处理过程中是否有错误
@@ -499,13 +515,14 @@ export async function checkWithAiSdk(config: ProviderConfig): Promise<CheckResul
       );
     }
 
-    // 空回复
-    if (!collectedResponse.trim()) {
+    // 空回复：文本与推理增量均为空才算未回复
+    if (!collectedResponse.trim() && !collectedReasoning.trim()) {
       return buildCheckResult(params, "failed", latencyMs, "回复为空");
     }
 
-    // 验证答案
-    const { valid, normalized } = validateResponse(collectedResponse, challenge.expectedAnswer);
+    // 验证答案：文本流为空时回退到推理增量（部分模型把答案错放进 reasoning）
+    const responseForValidation = collectedResponse.trim() ? collectedResponse : collectedReasoning;
+    const { valid, normalized } = validateResponse(responseForValidation, challenge.expectedAnswer);
 
     const challengeOutcome: ChallengeOutcome = {
       difficulty: challenge.difficulty,
@@ -531,11 +548,13 @@ export async function checkWithAiSdk(config: ProviderConfig): Promise<CheckResul
 
     // 判定健康状态
     const status: HealthStatus = latencyMs <= DEGRADED_THRESHOLD_MS ? "operational" : "degraded";
-    const message = !valid
-      ? `高难度题验证未通过（不计入健康状态）: 期望 "${challenge.expectedAnswer}" (${latencyMs}ms)`
-      : status === "degraded"
+    // 高难度题（3-5）验证结果只落库到智能评估，不写入状态消息，避免面板出现噪音
+    const message =
+      status === "degraded"
         ? `响应成功但耗时 ${latencyMs}ms`
-        : `验证通过 (${latencyMs}ms)`;
+        : valid
+          ? `验证通过 (${latencyMs}ms)`
+          : `响应成功 (${latencyMs}ms)`;
 
     return buildCheckResult(params, status, latencyMs, message, undefined, challengeOutcome);
   } catch (error) {
