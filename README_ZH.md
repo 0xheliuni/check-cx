@@ -6,9 +6,9 @@
 
 [English](README.md) | 简体中文
 
-</div>
-
 Check CX 持续探测 OpenAI / Gemini / Anthropic 等 AI 模型 API 的可用性与延迟，把结果变成一块清晰、可直接分享的状态面板——挂了立刻可见，慢了有据可查。
+
+</div>
 
 ![Check CX Dashboard](docs/images/index.png)
 

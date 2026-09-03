@@ -6,9 +6,9 @@
 
 English | [简体中文](README_ZH.md)
 
-</div>
-
 Check CX continuously probes the availability and latency of AI model APIs like OpenAI / Gemini / Anthropic, and turns the results into a clear, shareable status board — outages become visible instantly, slowness becomes provable.
+
+</div>
 
 ![Check CX Dashboard](docs/images/index.png)
 
