@@ -386,6 +386,41 @@ interface AIApiCallError extends Error {
 }
 
 /* ============================================================================
+ * think 块过滤
+ * ============================================================================ */
+
+/** 部分端点会把推理内容用这类标签混入文本流 */
+const THINK_TAGS = ["think", "thinking", "thought", "reasoning"] as const;
+
+/**
+ * 剥离文本中混入的 think 块
+ *
+ * 返回剥离后的正文与被剥离的 think 内容（后者作为答案的回退来源）。
+ * 处理三种形态：闭合块、流被截断导致的未闭合起始标签、以及缺失起始标签的孤立闭合标签
+ * （部分端点在服务端剥离起始标签，流里只剩 `</think>`）。
+ */
+function stripThinkBlocks(text: string): { content: string; think: string } {
+  let think = "";
+  let content = text;
+
+  const capture = (_match: string, inner: string): string => {
+    think += inner;
+    return "";
+  };
+
+  for (const tag of THINK_TAGS) {
+    // 1. 闭合块：<think>…</think>
+    content = content.replace(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`, "gi"), capture);
+    // 2. 孤立闭合标签（无起始标签）：`</think>` 之前全部视为 think 内容
+    content = content.replace(new RegExp(`^([\\s\\S]*?)</${tag}>`, "i"), capture);
+    // 3. 未闭合起始标签（流截断）：<think> 之后全部视为 think 内容
+    content = content.replace(new RegExp(`<${tag}>([\\s\\S]*)$`, "i"), capture);
+  }
+
+  return { content: content.trim(), think: think.trim() };
+}
+
+/* ============================================================================
  * 检查结果构建
  * ============================================================================ */
 
@@ -520,8 +555,13 @@ export async function checkWithAiSdk(config: ProviderConfig): Promise<CheckResul
       return buildCheckResult(params, "failed", latencyMs, "回复为空");
     }
 
-    // 验证答案：文本流为空时回退到推理增量（部分模型把答案错放进 reasoning）
-    const responseForValidation = collectedResponse.trim() ? collectedResponse : collectedReasoning;
+    // 剥离混入文本流的 think 块，避免推理内容导致答案 token 数超标而误判
+    const { content: strippedResponse, think: strippedThink } = stripThinkBlocks(collectedResponse);
+
+    // 验证答案：优先剥离后的正文，其次剥离出的 think 内容，
+    // 再次推理增量（部分模型把答案错放进 reasoning）
+    const responseForValidation =
+      strippedResponse || strippedThink || collectedReasoning;
     const { valid, normalized } = validateResponse(responseForValidation, challenge.expectedAnswer);
 
     const challengeOutcome: ChallengeOutcome = {

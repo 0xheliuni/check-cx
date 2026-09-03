@@ -1,6 +1,6 @@
 {
   "name": "check-cx",
-  "version": "1.23.18",
+  "version": "1.23.19",
   "private": true,
   "engines": {
     "node": ">=22"
