@@ -37,7 +37,8 @@
 
 ### 3.2 升级已有项目
 
-- 执行 `supabase/migrations/` 下的迁移（按时间顺序）。
+- 使用一键自托管栈且通过 `./deploy.sh` 连续 fast-forward 升级时，脚本会在替换应用容器前执行本次新增的 public 迁移，并把已执行文件记录在 `public.check_cx_schema_migrations`。它拒绝修改或删除已发布迁移。
+- 外部 Supabase、首次接入 `deploy.sh` 的旧环境、或不通过该脚本升级时，仍须执行 `supabase/migrations/` 下的 public 迁移（按时间顺序）。不要直接把全部历史迁移重复执行到未知版本的数据库。
 - 如使用 dev schema，需同步执行 `*_dev.sql` 迁移。
 - Admin 禁用/维护后面板即时更新依赖 `20260901140000_add_check_data_revision.sql`（dev 用对应 `_dev.sql`）。未执行时面板仍可刷新查看，只是不会自动推送。
 
