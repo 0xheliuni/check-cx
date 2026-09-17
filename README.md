@@ -89,17 +89,19 @@ Open:
 
 All knobs live in `.env` (annotated, copy of the upstream Supabase `.env.example` plus Check CX variables).
 
-#### Port conflicts and non-default ports
+#### Port exposure and non-default ports
 
-The full stack publishes five host ports, not just the three browser-facing ones:
+The default stack publishes only the panel and Supabase API/Auth to the network. The admin panel is loopback-only, while Postgres and the transaction pooler stay inside the Docker network.
 
-| Service | Default | Variable |
-|---|---:|---|
-| Panel | 3000 | `CHECK_CX_PORT` |
-| Admin | 3001 | `ADMIN_PORT` |
-| Supabase API / Auth | 8000 | `API_GW_HTTP_PORT` (or `KONG_HTTP_PORT`) |
-| Postgres | 5432 | `POSTGRES_PORT` |
-| Transaction pooler | 6543 | `POOLER_PROXY_PORT_TRANSACTION` |
+| Service | Default binding | Variable |
+|---|---|---|
+| Panel | `0.0.0.0:3000` | `CHECK_CX_BIND_ADDRESS`, `CHECK_CX_PORT` |
+| Admin | `127.0.0.1:3001` | `ADMIN_BIND_ADDRESS`, `ADMIN_PORT` |
+| Supabase API / Auth | `0.0.0.0:8000` | `API_GW_BIND_ADDRESS`, `API_GW_HTTP_PORT` (or `KONG_HTTP_PORT`) |
+| Postgres | not published | opt in with `docker-compose.db-access.yml` |
+| Transaction pooler | not published | opt in with `docker-compose.db-access.yml` |
+
+Use a host reverse proxy for remote admin access. Directly exposing the admin panel requires an explicit `ADMIN_BIND_ADDRESS=0.0.0.0`. If a reverse proxy also fronts Supabase Auth, set `API_GW_BIND_ADDRESS=127.0.0.1` and make `SUPABASE_URL` the proxy URL reachable by both the admin server and the browser.
 
 For example, this local profile avoids common conflicts. Container ports stay unchanged; every browser-visible URL must use the matching host port.
 
@@ -107,8 +109,6 @@ For example, this local profile avoids common conflicts. Container ports stay un
 CHECK_CX_PORT=13000
 ADMIN_PORT=13001
 API_GW_HTTP_PORT=18000
-POSTGRES_PORT=15432
-POOLER_PROXY_PORT_TRANSACTION=16543
 
 SUPABASE_PUBLIC_URL=http://localhost:18000
 API_EXTERNAL_URL=http://localhost:18000/auth/v1
@@ -122,6 +122,12 @@ Leave `SUPABASE_URL` empty for the bundled local stack: Compose selects the righ
 ```bash
 docker compose config -q
 docker compose up -d
+```
+
+For temporary host-side SQL access, use the opt-in override. It binds both database ports to loopback only:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.db-access.yml up -d
 ```
 
 #### Updating an existing bundled stack

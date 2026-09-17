@@ -65,7 +65,7 @@ services:
       api-gw:
         condition: service_started
     ports:
-      - "${CHECK_CX_PORT:-3000}:3000"
+      - "${CHECK_CX_BIND_ADDRESS:-0.0.0.0}:${CHECK_CX_PORT:-3000}:3000"
     environment:
       NODE_ENV: production
       # 未设置 SUPABASE_URL 时走栈内网关；设置了则沿用云 Supabase
@@ -93,7 +93,7 @@ services:
       api-gw:
         condition: service_started
     ports:
-      - "${ADMIN_PORT:-3001}:3000"
+      - "${ADMIN_BIND_ADDRESS:-127.0.0.1}:${ADMIN_PORT:-3001}:3000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:

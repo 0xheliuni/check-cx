@@ -89,17 +89,19 @@ docker compose up -d
 
 所有可调项都在 `.env`（带注释，基于上游 Supabase `.env.example` 加 Check CX 变量）。
 
-#### 端口冲突与非默认端口
+#### 端口暴露与非默认端口
 
-完整栈会占用 5 个宿主端口，不只是浏览器会访问到的 3 个：
+默认栈只会将面板和 Supabase API/Auth 发布到网络；管理后台只绑定回环地址，Postgres 与事务连接池则完全留在 Docker 网络中。
 
-| 服务 | 默认端口 | 变量 |
-|---|---:|---|
-| 面板 | 3000 | `CHECK_CX_PORT` |
-| 管理后台 | 3001 | `ADMIN_PORT` |
-| Supabase API / Auth | 8000 | `API_GW_HTTP_PORT`（或 `KONG_HTTP_PORT`）|
-| Postgres | 5432 | `POSTGRES_PORT` |
-| 事务连接池 | 6543 | `POOLER_PROXY_PORT_TRANSACTION` |
+| 服务 | 默认绑定 | 变量 |
+|---|---|---|
+| 面板 | `0.0.0.0:3000` | `CHECK_CX_BIND_ADDRESS`、`CHECK_CX_PORT` |
+| 管理后台 | `127.0.0.1:3001` | `ADMIN_BIND_ADDRESS`、`ADMIN_PORT` |
+| Supabase API / Auth | `0.0.0.0:8000` | `API_GW_BIND_ADDRESS`、`API_GW_HTTP_PORT`（或 `KONG_HTTP_PORT`）|
+| Postgres | 不发布 | 通过 `docker-compose.db-access.yml` 显式开启 |
+| 事务连接池 | 不发布 | 通过 `docker-compose.db-access.yml` 显式开启 |
+
+远程管理后台请使用宿主机反向代理；只有明确设置 `ADMIN_BIND_ADDRESS=0.0.0.0` 才会直接对外发布后台。若反向代理也代理 Supabase Auth，可设置 `API_GW_BIND_ADDRESS=127.0.0.1`，并把 `SUPABASE_URL` 配置为后台服务和浏览器都能访问的代理地址。
 
 例如下面的本地配置可避开常见端口冲突。容器内部端口不变；所有浏览器可见 URL 都必须使用对应的宿主端口。
 
@@ -107,8 +109,6 @@ docker compose up -d
 CHECK_CX_PORT=13000
 ADMIN_PORT=13001
 API_GW_HTTP_PORT=18000
-POSTGRES_PORT=15432
-POOLER_PROXY_PORT_TRANSACTION=16543
 
 SUPABASE_PUBLIC_URL=http://localhost:18000
 API_EXTERNAL_URL=http://localhost:18000/auth/v1
@@ -122,6 +122,12 @@ APP_URL=http://localhost:13001
 ```bash
 docker compose config -q
 docker compose up -d
+```
+
+临时需要从宿主机直连 SQL 时，使用显式 opt-in 的 override；两个数据库端口只绑定到回环地址：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.db-access.yml up -d
 ```
 
 #### 更新已有的一键栈

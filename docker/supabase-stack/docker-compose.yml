@@ -88,7 +88,7 @@ services:
       studio:
         condition: service_healthy
     ports:
-      - ${API_GW_HTTP_PORT:-${KONG_HTTP_PORT:-8000}}:8000/tcp
+      - ${API_GW_BIND_ADDRESS:-0.0.0.0}:${API_GW_HTTP_PORT:-${KONG_HTTP_PORT:-8000}}:8000/tcp
     volumes:
       - ./volumes/api/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
       - ./volumes/api/envoy/cds.yaml:/etc/envoy/cds.yaml:ro
@@ -536,9 +536,6 @@ services:
     container_name: supabase-pooler
     image: supabase/supavisor:2.9.5
     restart: unless-stopped
-    ports:
-      - ${POSTGRES_PORT}:5432
-      - ${POOLER_PROXY_PORT_TRANSACTION}:6543
     volumes:
       - ./volumes/pooler/pooler.exs:/etc/pooler/pooler.exs:ro,z
     healthcheck:
