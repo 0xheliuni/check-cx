@@ -65,7 +65,7 @@ services:
       api-gw:
         condition: service_started
     ports:
-      - "${CHECK_CX_PORT:-3000}:3000"
+      - "${CHECK_CX_BIND_ADDRESS:-0.0.0.0}:${CHECK_CX_PORT:-3000}:3000"
     environment:
       NODE_ENV: production
       # 未设置 SUPABASE_URL 时走栈内网关；设置了则沿用云 Supabase
@@ -93,14 +93,14 @@ services:
       api-gw:
         condition: service_started
     ports:
-      - "${ADMIN_PORT:-3001}:3000"
+      - "${ADMIN_BIND_ADDRESS:-127.0.0.1}:${ADMIN_PORT:-3001}:3000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
       NODE_ENV: production
       # 浏览器要走这个地址完成 OAuth；默认 host.docker.internal 兼容器内调用
       # 与本机浏览器，局域网/公网部署请改为 http://<主机IP或域名>:8000
-      SUPABASE_URL: ${SUPABASE_URL:-http://host.docker.internal:8000}
+      SUPABASE_URL: ${SUPABASE_URL:-http://host.docker.internal:${API_GW_HTTP_PORT:-${KONG_HTTP_PORT:-8000}}}
       SUPABASE_PUBLISHABLE_OR_ANON_KEY: ${SUPABASE_PUBLISHABLE_OR_ANON_KEY:-${ANON_KEY}}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-${SERVICE_ROLE_KEY}}
       SUPABASE_DB_SCHEMA: ${SUPABASE_DB_SCHEMA:-public}

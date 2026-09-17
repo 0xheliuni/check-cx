@@ -89,9 +89,54 @@ Open:
 
 All knobs live in `.env` (annotated, copy of the upstream Supabase `.env.example` plus Check CX variables).
 
+#### Port exposure and non-default ports
+
+The default stack publishes only the panel and Supabase API/Auth to the network. The admin panel is loopback-only, while Postgres and the transaction pooler stay inside the Docker network.
+
+| Service | Default binding | Variable |
+|---|---|---|
+| Panel | `0.0.0.0:3000` | `CHECK_CX_BIND_ADDRESS`, `CHECK_CX_PORT` |
+| Admin | `127.0.0.1:3001` | `ADMIN_BIND_ADDRESS`, `ADMIN_PORT` |
+| Supabase API / Auth | `0.0.0.0:8000` | `API_GW_BIND_ADDRESS`, `API_GW_HTTP_PORT` (or `KONG_HTTP_PORT`) |
+| Postgres | not published | opt in with `docker-compose.db-access.yml` |
+| Transaction pooler | not published | opt in with `docker-compose.db-access.yml` |
+
+Use a host reverse proxy for remote admin access. Directly exposing the admin panel requires an explicit `ADMIN_BIND_ADDRESS=0.0.0.0`. If a reverse proxy also fronts Supabase Auth, set `API_GW_BIND_ADDRESS=127.0.0.1` and make `SUPABASE_URL` the proxy URL reachable by both the admin server and the browser.
+
+For example, this local profile avoids common conflicts. Container ports stay unchanged; every browser-visible URL must use the matching host port.
+
+```env
+CHECK_CX_PORT=13000
+ADMIN_PORT=13001
+API_GW_HTTP_PORT=18000
+
+SUPABASE_PUBLIC_URL=http://localhost:18000
+API_EXTERNAL_URL=http://localhost:18000/auth/v1
+SITE_URL=http://localhost:13001
+ADDITIONAL_REDIRECT_URLS=http://localhost:13001/auth/callback
+APP_URL=http://localhost:13001
+```
+
+Leave `SUPABASE_URL` empty for the bundled local stack: Compose selects the right internal or host-gateway URL, including a customized API port. For LAN/public deployment, set it to the browser-reachable external Supabase API URL. Validate the resolved configuration before starting:
+
+```bash
+docker compose config -q
+docker compose up -d
+```
+
+For temporary host-side SQL access, use the opt-in override. It binds both database ports to loopback only:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.db-access.yml up -d
+```
+
+#### Updating an existing bundled stack
+
+Use `./deploy.sh` for a fast-forward update. It applies newly added public database migrations before replacing the application containers, refuses modified/deleted migration history, and checks the actual panel port. External Supabase projects remain manual: apply the migrations in [`docs/OPERATIONS.md`](docs/OPERATIONS.md) before deploying.
+
 #### Enabling admin sign-in
 
-Admin authenticates via Supabase Auth with GitHub OAuth. Create a GitHub OAuth app with callback URL `http://<主机IP或域名>:8000/auth/v1/callback`（同机即 `http://localhost:8000/auth/v1/callback`）, then set in `.env`:
+Admin authenticates via Supabase Auth with GitHub OAuth. Create a GitHub OAuth app with callback URL `http://<host-or-domain>:<API_GW_HTTP_PORT>/auth/v1/callback` (default: `http://localhost:8000/auth/v1/callback`), then set in `.env`:
 
 ```env
 GITHUB_ENABLED=true

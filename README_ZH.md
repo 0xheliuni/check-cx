@@ -89,9 +89,54 @@ docker compose up -d
 
 所有可调项都在 `.env`（带注释，基于上游 Supabase `.env.example` 加 Check CX 变量）。
 
+#### 端口暴露与非默认端口
+
+默认栈只会将面板和 Supabase API/Auth 发布到网络；管理后台只绑定回环地址，Postgres 与事务连接池则完全留在 Docker 网络中。
+
+| 服务 | 默认绑定 | 变量 |
+|---|---|---|
+| 面板 | `0.0.0.0:3000` | `CHECK_CX_BIND_ADDRESS`、`CHECK_CX_PORT` |
+| 管理后台 | `127.0.0.1:3001` | `ADMIN_BIND_ADDRESS`、`ADMIN_PORT` |
+| Supabase API / Auth | `0.0.0.0:8000` | `API_GW_BIND_ADDRESS`、`API_GW_HTTP_PORT`（或 `KONG_HTTP_PORT`）|
+| Postgres | 不发布 | 通过 `docker-compose.db-access.yml` 显式开启 |
+| 事务连接池 | 不发布 | 通过 `docker-compose.db-access.yml` 显式开启 |
+
+远程管理后台请使用宿主机反向代理；只有明确设置 `ADMIN_BIND_ADDRESS=0.0.0.0` 才会直接对外发布后台。若反向代理也代理 Supabase Auth，可设置 `API_GW_BIND_ADDRESS=127.0.0.1`，并把 `SUPABASE_URL` 配置为后台服务和浏览器都能访问的代理地址。
+
+例如下面的本地配置可避开常见端口冲突。容器内部端口不变；所有浏览器可见 URL 都必须使用对应的宿主端口。
+
+```env
+CHECK_CX_PORT=13000
+ADMIN_PORT=13001
+API_GW_HTTP_PORT=18000
+
+SUPABASE_PUBLIC_URL=http://localhost:18000
+API_EXTERNAL_URL=http://localhost:18000/auth/v1
+SITE_URL=http://localhost:13001
+ADDITIONAL_REDIRECT_URLS=http://localhost:13001/auth/callback
+APP_URL=http://localhost:13001
+```
+
+一键本地栈请保持 `SUPABASE_URL` 为空：Compose 会自动选择正确的内部或 host-gateway 地址，并跟随自定义的 API 端口。局域网/公网部署则将它设为浏览器能访问的 Supabase API 外部地址。启动前先校验实际展开后的配置：
+
+```bash
+docker compose config -q
+docker compose up -d
+```
+
+临时需要从宿主机直连 SQL 时，使用显式 opt-in 的 override；两个数据库端口只绑定到回环地址：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.db-access.yml up -d
+```
+
+#### 更新已有的一键栈
+
+使用 `./deploy.sh` 进行 fast-forward 更新。它会在替换应用容器前执行新加入的 public 数据库迁移、拒绝已发布迁移被修改或删除，并按实际面板端口检查就绪状态。外部 Supabase 项目仍需手动按 [`docs/OPERATIONS.md`](docs/OPERATIONS.md) 执行迁移后再部署。
+
 #### 开启管理后台登录
 
-管理后台通过 Supabase Auth 走 GitHub OAuth 登录。创建一个 GitHub OAuth 应用，回调地址填 `http://<主机IP或域名>:8000/auth/v1/callback`（同机即 `http://localhost:8000/auth/v1/callback`），然后在 `.env` 中配置：
+管理后台通过 Supabase Auth 走 GitHub OAuth 登录。创建一个 GitHub OAuth 应用，回调地址填 `http://<主机IP或域名>:<API_GW_HTTP_PORT>/auth/v1/callback`（默认即 `http://localhost:8000/auth/v1/callback`），然后在 `.env` 中配置：
 
 ```env
 GITHUB_ENABLED=true
